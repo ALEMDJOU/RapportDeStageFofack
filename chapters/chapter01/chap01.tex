@@ -1,0 +1,83 @@
+%
+% File: chap01.tex
+% Description: Introduction Générale du mémoire DocEx
+%
+\chapter*{Introduction Générale}
+
+
+% ============================================================
+\section*{\color{darkgray}CONTEXTE GÉNÉRAL}
+% ============================================================
+\initial{L}a transformation numérique des entreprises a engendré une croissance exponentielle du volume de documents à traiter~: factures, relevés d'identité bancaire, extraits Kbis, contrats, curricula vitæ. On estime que plus de 80\,\% de l'information d'entreprise réside dans des documents non structurés \cite{aiim2019}, et le traitement manuel de ces documents représente un coût opérationnel considérable tant en temps qu'en ressources humaines \cite{palm2017}.
+
+Face à cette réalité, des solutions logicielles ont vu le jour pour automatiser l'extraction d'informations. Les plateformes cloud telles qu'AWS Textract \cite{aws2024textract}, Azure Document Intelligence \cite{microsoft2024azure} et Google Document AI \cite{google2024documentai} proposent des services combinant reconnaissance optique de caractères et intelligence artificielle. Toutefois, ces solutions présentent des limitations~: les systèmes à base de templates offrent une précision élevée (supérieure à 98\,\%) sur des mises en page fixes mais échouent face aux variations de structure \cite{schuster2013}, les approches OCR perdent les relations spatiales critiques entre éléments textuels \cite{smith2007tesseract}, et les solutions par apprentissage profond nécessitent d'importants jeux de données d'entraînement et des infrastructures coûteuses \cite{xu2020layoutlm}. Aucune de ces approches, prise isolément, ne parvient à concilier précision, adaptabilité, transparence et coût maîtrisé.
+
+% ============================================================
+\section*{\color{darkgray}PROBLÉMATIQUE}
+% ============================================================
+Les solutions actuelles d'extraction de documents reposent sur trois paradigmes distincts dont aucun ne répond seul aux exigences du terrain \cite{binmakhashen2019}. Les systèmes à base de templates manquent de flexibilité, les approches OCR sacrifient la compréhension structurelle, et les modèles d'IA exigent des ressources considérables tout en sacrifiant la transparence algorithmique \cite{harley2015icdar}. Cette fragmentation contraint les organisations à choisir entre précision et flexibilité, entre performance et coût, sans jamais satisfaire l'ensemble de leurs besoins \cite{dengel2006smartfix}. Il devient impératif de concevoir un framework unifié qui tire parti des forces de chaque approche tout en compensant leurs faiblesses respectives.
+
+\begin{bidentidad}{Question}
+    \centering 
+    \textbf{Comment développer un framework intelligent unifié qui sélectionne et combine dynamiquement des méthodologies d'extraction appariement de templates, reconnaissance d'entités nommées et validation par patterns en se fondant sur la classification du type de document, tout en maintenant des exigences de précision spécifiques à chaque domaine et en fournissant des garanties mathématiques de fiabilité du traitement\,?}
+\end{bidentidad}
+
+% ============================================================
+\section*{\color{darkgray}HYPOTHÈSE}
+% ============================================================
+Notre hypothèse de recherche postule qu'une architecture multi-modale intégrant la classification de documents, la sélection adaptative de méthodes et l'apprentissage incrémental peut atteindre à la fois l'unification du traitement et la précision spécialisée, grâce à des mécanismes de commutation mathématiquement fondés et au transfert de connaissances inter-domaines.
+
+Cela permettrait de~:
+\begin{itemize}[label=\ding{42}, font=\large \color{darkgray}]
+\item Atteindre une précision d'extraction supérieure à 98\,\% en combinant les forces des approches template, OCR et pattern matching.
+\item Réduire le temps de configuration pour de nouveaux types de documents grâce à l'apprentissage incrémental.
+\item Garantir la transparence par des scores de confiance champ par champ et un journal d'audit complet.
+\item Fournir une solution dont le coût reste indépendant du volume de documents traités.
+\end{itemize}
+
+% ============================================================
+\section*{\color{darkgray}OBJECTIFS ET MOTIVATIONS}
+% ============================================================
+
+\subsection*{Objectif Général}
+Développer et valider un framework hybride d'extraction de documents qui intègre la modélisation des relations spatiales avec des algorithmes d'apprentissage incrémental, fournissant des fondations théoriques pour des systèmes de templates adaptatifs dotés de bornes de précision prouvables.
+
+\subsection*{Objectifs Spécifiques}
+Concrètement, ce travail impliquera~:
+\begin{itemize}[label=\ding{42}, font=\large \color{darkgray}]
+\item Développer un système de classification multi-modale de documents avec une précision supérieure à 98\,\% sur les documents financiers, RH, juridiques et administratifs.
+\item Concevoir des moteurs d'extraction spécialisés combinant analyse par templates, reconnaissance d'entités nommées et reconnaissance de patterns.
+\item Formaliser des algorithmes de sélection adaptative de méthodes avec analyse théorique des coûts de commutation et mécanisme de fallback automatique.
+\item Intégrer les méthodologies d'extraction au sein d'un framework unifié doté de fondations mathématiques pour l'analyse d'erreurs.
+\item Valider le framework par une évaluation mesurant la précision, l'efficacité et la scalabilité en conditions réelles.
+\end{itemize}
+
+% ============================================================
+\section*{\color{darkgray}MÉTHODOLOGIE}
+% ============================================================
+La réalisation de ce travail passe par~:
+\begin{itemize}[label=\ding{42}, font=\large \color{darkgray}]
+\item La compréhension des fondements scientifiques~: maîtriser la théorie du template matching, de l'OCR, de l'analyse de mise en page et de l'apprentissage automatique appliqué aux documents.
+
+\item La revue des solutions existantes~: analyser les plateformes et approches actuelles afin d'en dégager forces, faiblesses et pistes d'amélioration.
+
+\item La formalisation mathématique~: établir les fondations formelles du framework  espaces de documents, fonctions de similarité, critères de sélection et bornes de précision.
+
+\item La modélisation et la conception~: produire la modélisation UML complète et concevoir l'architecture logicielle et physique en appliquant les design patterns adaptés.
+
+\item L'implémentation et la validation~: implémenter le système sous forme de module ERP et valider ses performances par des campagnes de tests.
+\end{itemize}
+
+% ============================================================
+\section*{\color{darkgray}PLAN DU RAPPORT }
+% ============================================================
+La suite de ce document comprend trois chapitres principaux, suivis d'une conclusion générale~:
+\begin{itemize}
+\item \textbf{Chapitre 1~: État de l'art} où nous présentons les concepts liés à l'extraction de documents et une étude comparative des solutions existantes, suivie d'un positionnement de notre contribution.
+
+\item \textbf{Chapitre 2~: Approche de Modélisation d'Ophélia} où nous détaillons la formalisation mathématique, l'analyse des besoins, la modélisation UML complète et la conception de l'architecture logicielle et physique.
+
+\item \textbf{Chapitre 3~: Implémentation, Résultats et Perspectives} où nous décrivons les technologies utilisées, les interfaces développées, les résultats obtenus et les perspectives d'évolution.
+
+\item \textbf{Conclusion générale} qui rappelle la problématique, la démarche adoptée, les résultats obtenus, les limites et les perspectives.
+\end{itemize}

@@ -1,0 +1,119 @@
+%
+% File: Title.tex
+% Author: V?ctor Bre?a-Medina
+% Description: Contains the title page
+%
+% UoB guidelines:
+% 
+% At the top of the title page, within the margins, the dissertation should give the title and, if 
+% necessary, sub-title and volume number. If the dissertation is in a language other than English, the 
+% title must be given in that language and in English. The full name of the author should be in the 
+% centre of the page. At the bottom centre should be the words ?A dissertation submitted to the 
+% University of Bristol in accordance with the requirements for award of the degree of ? in the 
+% Faculty of ...?, with the name of the school and month and year of submission. The word count of 
+% the dissertation (text only) should be entered at the bottom right-hand side of the page.
+%
+%
+%\hspace{5cm}
+%\pagecolor{fondpaille}%\afterpage{\nopagecolor}
+
+\begin{titlingpage}
+\begin{SingleSpace}
+
+%\calccentering{\unitlength} 
+\begin{adjustwidth*}{\unitlength}{-\unitlength}
+%Front page corner design...read ornaments documentation for more info
+%Peterson Yuhala
+%Drawn via eso-pic's shipout hook (fires once, on the very next physical
+%page shipped) instead of a plain overlay: this way the frame is tied to
+%the actual page 1 output, regardless of where in the flow it's written
+%or whether the content below happens to overflow onto a second page.
+\AddToShipoutPictureBG*{%
+\begin{tikzpicture}[remember picture, overlay, start chain, node distance=-2mm,color=darkgray]
+\node (nworn) [shift={(5mm,-5mm)}, anchor=north west, on chain ] at (current page.north west) {\pgfornament[width=10mm]{19}};
+\foreach \i in {1,...,17}
+\node [on chain] {\pgfornament[width=10mm]{19}};
+\node (neorn) [on chain] {\pgfornament[width=10mm]{19}};
+\foreach \i in {1,...,25}
+\node [continue chain=going below, on chain] {\pgfornament[width=10mm]{19}};
+\node (seorn) [on chain] {\pgfornament[width=10mm]{19}};
+\foreach \i in {1,...,17}
+\node [continue chain=going left, on chain] {\pgfornament[width=10mm]{19}};
+\node (sworn) [on chain] {\pgfornament[width=10mm]{19}};
+\foreach \i in {1,...,25}
+\node [continue chain=going above, on chain] {\pgfornament[width=10mm]{19}};
+\end{tikzpicture}%
+}
+\vspace*{13mm}
+\vspace{-4cm}
+\begin{center}
+ 	\begin{tabular}{ccc}
+				{\large UNIVERSITE DE YAOUNDE I} & \multirow{8}{*}{\includegraphics[ width =3cm , height =3cm]{logos/uy1.png}} & \large{UNIVERSITY OF YAOUNDE I}\\
+				%& & \\
+				\textbf{*******} &    & \textbf{*******} \\
+				%& & \\
+				\textcolor{darkgray}{ECOLE NATIONALE SUPERIEURE}& & \textcolor{darkgray}{NATIONAL ADVANCED SCHOOL}\\ 
+				\textcolor{darkgray}{POLYTECHNIQUE DE YAOUNDE}	  & & \textcolor{darkgray}{OF ENGINEERING OF YAOUNDE} \\
+				%& & \\
+				\textbf{********}    & & \textbf{*******} \\
+				%& & \\
+				DEPARTEMENT DE GENIE& & DEPARTMENT OF COMPUTER \\ 
+				INFORMATIQUE & & ENGINEERING \\
+				\end{tabular}
+	
+\end{center}
+\hspace{3cm}
+\vspace{2.3cm}
+\begin{center}
+\rule[0.5ex]{\linewidth}{2pt}\vspace*{-\baselineskip}\vspace*{3.2pt}
+\rule[0.5ex]{\linewidth}{1pt}\\[\baselineskip]
+{\LARGE \textcolor{darkgray}{\textsc{Modélisation d'un module d'extraction automatique de données pour documents administratifs : étude de cas Dolibarr}}}\\[4mm]
+
+% {\Large \textcolor{darkgray}{Applied to the domain 0 in the Xen virtualization system}}\\
+\rule[0.5ex]{\linewidth}{1pt}\vspace*{-\baselineskip}\vspace{3.2pt}
+\rule[0.5ex]{\linewidth}{2pt}\\
+\vspace{10mm}
+{\Large \textbf{Rapport de stage PR\'E-ING\'ENIEUR}}\\
+\vspace{15mm}
+{\Large Pr\'esent\'e par: } \\
+\vspace{4mm}
+{\large \textsc{\textbf{\textcolor{darkgray}{FOFACK ALEMDJOU HENRI JOEL}}}}\\
+\vspace{15mm}
+{\Large Matricule: } \\
+\vspace{4mm}
+{\large \textsc{\textbf{\textcolor{darkgray}{22P231}}}}\\
+\vspace{3.5mm}
+\vspace{20mm}
+{\Large Sous la supervision de :}\\
+\vspace{4mm}
+{\normalsize \textsc{\textbf{\textcolor{darkgray}{M.BRELL SANWOUO, PHD Student et CEO de NOVALITIX}}}}\\
+\vspace{4.5mm}
+\vspace{15mm}
+
+
+\begin{tabular}{c}
+{\Large \textcolor{darkgray}{Ann\'ee acad\'emique 2025-2026}}\\
+% {\Large \textcolor{darkgray}{Defended the 08th September 2017}}
+\end{tabular}
+
+% \begin{tikzpicture}[remember picture, overlay]
+%  \begin{scope}[shift={(current page.south west)},shift={(1,1)},scale=1]
+%  \shade[ball color=darkgray,opacity=.6] (0,0) circle (10ex);
+%  \shade[ball color=darkgray,opacity=.8] (1.7,1) circle (6ex);
+%  \shade[ball color=darkgray,opacity=.8] (1.5,3) circle (2ex);
+%  \shade[ball color=darkgray,opacity=.5] (-0.5,3) circle (1ex);
+%  \shade[ball color=darkgray,opacity=.8] (1,4) circle (1ex);
+%  \shade[ball color=darkgray,opacity=.6] (3.5,2.5) circle (2ex);
+%  \shade[ball color=darkgray,opacity=.8] (2.5,3.5) circle (2ex);
+%  \end{scope}
+%  \end{tikzpicture}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\cornerplus{41}{88}
+\end{center}
+
+
+\end{adjustwidth*}
+
+\end{SingleSpace}
+\end{titlingpage}

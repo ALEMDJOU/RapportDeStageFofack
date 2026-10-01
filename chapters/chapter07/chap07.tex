@@ -1,0 +1,32 @@
+\chapter*{Conclusion}
+\label{chap:conclusion}
+\addstarredchapter{Conclusion}
+
+\section*{Rappel du problème}
+Parvenu au terme de notre travail, il était question pour nous d'effectuer le déploiement et le passage à l'échelle d'une application
+multi-tiers. L'application étant web, disposant d'une API faite en JavaScript et d'une base de données géospatiale, ceci indiquant qu'il 
+s'agisse d'un SIG où le temps de calcul est important.
+
+\section*{Démarche et résultats}
+Nous avons choisi pour résoudre notre problème, une approche itérative incrémentale où on avançait étape par étape et où on améliorait ce 
+qui avait déjà été fait. Pour y arriver, on a :
+\begin{itemize}
+    \item Appris à nous connecter à l'ordinateur distant,
+    \item Appris à utiliser les outils nécessaires,
+    \item Effectué une conteneurisation progressive,
+    \item \'Ecrit un générateur de charge et effectué des tests de charge,
+    \item Procédé à un déploiement sur Kubernetes.
+\end{itemize}
+
+\section*{Limites}
+L'on déplore :
+\begin{itemize}
+    \item Le temps de chargement de la base de données lors de la première initialisation,
+    \item Le temps d'initialisation du cluster qui est plus grand en fonction du nombre de n\oe ud à cause de la base de données.
+\end{itemize}
+
+\section*{Perpective}
+On peut :
+\begin{itemize}
+    \item Mettre chacune des tables la base de données dans un conteneur Docker, le tout répartis dans un pod Kubernetes pour diviser le temps d'initialisation par 2 pour un n\oe ud.
+\end{itemize}

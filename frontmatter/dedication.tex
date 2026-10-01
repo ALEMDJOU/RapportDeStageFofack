@@ -1,0 +1,28 @@
+\chapter*{D\'edicace}
+%\begin{SingleSpace}
+\vspace{3cm}
+\begin{center}
+  \begin{tikzpicture}[color=darkgray,every node/.style={inner sep=0pt}]
+    % Noeud de texte central (taille agrandie, deux lignes)
+    \node[text width=12cm,align=center](Text){%
+      {\calligra\fontsize{28}{34}\selectfont 
+       A  Mes  Tr\`es  Chers  Parents\\
+       Et   Fr\`eres  Et  Soeurs}
+    };
+
+    % Coins positionnés à l'extérieur du texte
+    \node[anchor=south east](CNW) at (Text.north west)
+                   {\pgfornament[width=2cm]{61}};
+    \node[anchor=south west](CNE) at (Text.north east)
+                   {\pgfornament[width=2cm,symmetry=v]{61}};
+    \node[anchor=north east](CSW) at (Text.south west)
+                   {\pgfornament[width=2cm,symmetry=h]{61}};
+    \node[anchor=north west](CSE) at (Text.south east)
+                   {\pgfornament[width=2cm,symmetry=c]{61}};
+  \end{tikzpicture}
+\end{center}
+%\end{SingleSpace}
+\clearpage
+
+
+

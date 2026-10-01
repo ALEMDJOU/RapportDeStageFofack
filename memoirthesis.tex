@@ -1,0 +1,642 @@
+%\title{University of Bristol Thesis Template}
+\RequirePackage[l2tabu]{nag}		% Warns for incorrect (obsolete) LaTeX usage
+%
+% File: memoirthesis.tex
+% Author: Victor Brena
+% Description: Contains the thesis template using memoir class,
+% which is mainly based on book class but permits better control of 
+% chapter styles for example. This template is an adaptation and 
+% modification of Oscar's.
+% 
+% Memoir is a flexible class for typesetting poetry, fiction, 
+% non-fiction and mathematical works as books, reports, articles or
+% manuscripts. CTAN repository is found at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/memoir/
+%
+% UoB guidelines for thesis presentation were found at:
+% http://www.bris.ac.uk/esu/pg/pgrcop11-12topic.pdf#page=49
+%
+\documentclass[a4paper,11pt,leqno,oneside]{memoir}
+%
+\usepackage{colortbl}      % \rowcolor
+\usepackage{amsmath}
+\usepackage{amssymb}       % \mathbb{I}
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+% Adding metadata:
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{calligra}
+\usepackage{eso-pic}
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,snakes,
+		       automata,backgrounds,
+		       petri,topaths}
+
+\usepackage{tcolorbox}
+
+\newtcolorbox{bidentidad}[2][]{
+  enhanced,
+  skin=enhancedlast jigsaw,
+  attach boxed title to top left={xshift=-4mm,yshift=-0.5mm},
+  fonttitle=\bfseries\sffamily,
+  colbacktitle=darkgray,
+  colframe=darkgray,
+  interior style={
+    top color=blue!3,
+    bottom color=red!3
+  },
+  boxed title style={
+    empty,
+    arc=0pt,
+    outer arc=0pt,
+    boxrule=0pt
+  },
+  underlay boxed title={
+    \fill[darkgray] 
+      (title.north west) -- 
+      (title.north east) -- 
+      +(\tcboxedtitleheight-1mm,-\tcboxedtitleheight+1mm) -- 
+      ([xshift=4mm,yshift=0.5mm]frame.north east) -- 
+      +(0mm,-1mm) -- 
+      (title.south west) -- cycle;
+    \fill[darkgray] 
+      ([yshift=-0.5mm]frame.north west) -- 
+      +(-0.4,0) -- 
+      +(0,-0.3) -- cycle;
+    \fill[darkgray] 
+      ([yshift=-0.5mm]frame.north east) -- 
+      +(0,-0.3) -- 
+      +(0.4,0) -- cycle; 
+  },
+title = Questions
+}
+
+
+\newtcolorbox{bidentidad2}[2][]{
+  enhanced,
+  skin=enhancedlast jigsaw,
+  attach boxed title to top left={xshift=-4mm,yshift=-0.5mm},
+  fonttitle=\bfseries\sffamily,
+  colbacktitle=darkgray,
+  colframe=darkgray,
+  interior style={
+    top color=blue!3,
+    bottom color=red!3
+  },
+  boxed title style={
+    empty,
+    arc=0pt,
+    outer arc=0pt,
+    boxrule=0pt
+  },
+  underlay boxed title={
+    \fill[darkgray] 
+      (title.north west) -- 
+      (title.north east) -- 
+      +(\tcboxedtitleheight-1mm,-\tcboxedtitleheight+1mm) -- 
+      ([xshift=4mm,yshift=0.5mm]frame.north east) -- 
+      +(0mm,-1mm) -- 
+      (title.south west) -- cycle;
+    \fill[darkgray] 
+      ([yshift=-0.5mm]frame.north west) -- 
+      +(-0.4,0) -- 
+      +(0,-0.3) -- cycle;
+    \fill[darkgray] 
+      ([yshift=-0.5mm]frame.north east) -- 
+      +(0,-0.3) -- 
+      +(0.4,0) -- cycle; 
+  },
+title = More generally;
+}
+
+\usepackage{enumitem}
+\usepackage{bbding}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{frcursive}
+\usepackage{pifont}
+\setlist[itemize]{label=\textcolor{darkgray}{\HandCuffRight}}
+\tcbuselibrary{skins}
+\usepackage{psvectorian}
+\renewcommand*{\psvectorianDefaultColor}{Blue}%
+\usepackage{datetime}
+\usepackage{ifpdf}
+\ifpdf
+\pdfinfo{
+   /Author (Peterson Yuhala)
+   /Title (MII ENSPY)
+   /Keywords (Xen; )
+   /CreationDate (D:\pdfdate)
+}
+\fi
+\ifdraftdoc 
+	\usepackage{draftwatermark}
+	\SetWatermarkScale{0.3}
+	\SetWatermarkText{\bf Draft: \today}
+\fi
+%
+\newsubfloat{figure}
+\newsubfloat{table}
+\usepackage{booktabs}
+\usepackage{siunitx}
+
+\usetikzlibrary{chains}
+
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+
+% Better page layout for A4 paper
+\settrimmedsize{297mm}{210mm}{*}
+\setlength{\trimtop}{0pt} 
+\setlength{\trimedge}{\stockwidth} 
+\addtolength{\trimedge}{-\paperwidth} 
+\settypeblocksize{634pt}{448.13pt}{*} 
+\setulmargins{4cm}{*}{*} 
+\setlrmargins{*}{*}{1.5} 
+\setmarginnotes{17pt}{51pt}{\onelineskip} 
+\setheadfoot{\onelineskip}{2\onelineskip} 
+\setheaderspaces{*}{2\onelineskip}{*} 
+\checkandfixthelayout
+%
+\frenchspacing
+\usepackage{fouriernc}
+%%% MINITOC SUPPRIMÉ — remplacé par etoc (voir plus bas)
+\usepackage{fancybox}
+\usepackage{makeidx}
+
+
+\definecolor{marron}{RGB}{60,30,10}
+\definecolor{darkblue}{RGB}{0,0,80}
+\definecolor{lightblue}{RGB}{80,80,80}
+\definecolor{darkgreen}{RGB}{0,80,0}
+\definecolor{darkgray}{RGB}{128,0,0}
+\definecolor{darkred}{RGB}{80,0,0}
+\definecolor{shadecolor}{rgb}{0.97,0.97,0.97}
+\usepackage{fourier-orns}
+\usepackage[T1]{fontenc}
+
+
+\makeatletter
+\def\headrule{{\color{darkgray}\raisebox{-2.1pt}[10pt][10pt]{\leafright} \hrulefill \raisebox{-2.1pt}[10pt][10pt]{~~~\decofourleft \decotwo\decofourright~~~} \hrulefill \raisebox{-2.1pt}[10pt][10pt]{ \leafleft}}}
+\makeatother
+\usepackage{pdflscape} 
+\usepackage[
+final,
+stretch=10,
+protrusion=true,
+tracking=true,
+spacing=on,
+kerning=on,
+expansion=true]{microtype}
+
+\newcommand{\ornamento}{\vspace{-2em} \noindent \textcolor{darkgray}{\hrulefill~ \raisebox{-2.5pt}[10pt][10pt]{\leafright \decofourleft \decothreeleft  \aldineright \decotwo \floweroneleft \decoone   \floweroneright \decotwo \aldineleft\decothreeright \decofourright \leafleft} ~  \hrulefill}}
+\newcommand{\ornpar}{\noindent \textcolor{darkgray}{ \raisebox{-1.9pt}[10pt][10pt]{\leafright} \hrulefill \raisebox{-1.9pt}[10pt][10pt]{\leafright \decofourleft \decothreeleft  \aldineright \decotwo \floweroneleft \decoone}}}
+\newcommand{\ornimpar}{\textcolor{darkgray}{\raisebox{-1.9pt}[10pt][10pt]{\decoone \floweroneright \decotwo \aldineleft \decothreeright \decofourright \leafleft} \hrulefill \raisebox{-1.9pt}[10pt][10pt]{\leafleft}}}
+%
+\OnehalfSpacing 
+%
+\setsecnumdepth{subsection} 
+\maxsecnumdepth{subsubsection}
+%
+\usepackage{calc,soul,fourier}
+\makeatletter 
+\newlength\dlf@normtxtw 
+\setlength\dlf@normtxtw{\textwidth} 
+\newsavebox{\feline@chapter} 
+\newcommand\feline@chapter@marker[1][4cm]{%
+	\sbox\feline@chapter{% 
+		\resizebox{!}{#1}{\fboxsep=1pt%
+			\colorbox{darkgray}{\color{white}\thechapter}% 
+		}}%
+		\rotatebox{90}{% 
+			\resizebox{%
+				\heightof{\usebox{\feline@chapter}}+\depthof{\usebox{\feline@chapter}}}% 
+			{!}{\scshape\so\@chapapp}}\quad%
+		\raisebox{\depthof{\usebox{\feline@chapter}}}{\usebox{\feline@chapter}}%
+} 
+\newcommand\feline@chm[1][4cm]{%
+	\sbox\feline@chapter{\feline@chapter@marker[#1]}% 
+	\makebox[0pt][c]{% aka \rlap
+		\makebox[1cm][r]{\usebox\feline@chapter}%
+	}}
+\makechapterstyle{daleifmodif}{
+	\renewcommand\chapnamefont{\normalfont\Large\scshape\raggedleft\so} 
+	\renewcommand\chaptitlefont{\normalfont\Large\bfseries\scshape} 
+	\renewcommand\chapternamenum{} \renewcommand\printchaptername{} 
+	\renewcommand\printchapternum{\null\hfill\feline@chm[2.5cm]\par} 
+	\renewcommand\afterchapternum{\par\vskip\midchapskip} 
+	\renewcommand\printchaptertitle[1]{\color{darkgray}\chaptitlefont\raggedleft ##1\par}
+} 
+\makeatother 
+
+\chapterstyle{daleifmodif}
+%
+\renewcommand{\sectionmark}[1]{\markright{\thesection~- ~#1}}
+\renewcommand{\chaptermark}[1]{\markboth{\chaptername~\thechapter~-~ #1}{}}
+
+\makepagestyle{myvf} 
+\makeoddfoot{myvf}{}{\ornimpar \\ \large \hfill \sffamily\bf \textcolor{black}{\leafNE ~~~ Page \thepage}
+}{} 
+\makeevenfoot{myvf}{}{\ornpar   \\ \large  \sffamily\bf \textcolor{black}{\thepage ~~~ \reflectbox{\leafNE}}  \hfill}{} 
+\makeevenhead{myvf}{\leftmark}{\ornamento}{\rightmark} 
+\makeoddhead{myvf}{\leftmark}{\ornamento}{\rightmark}
+\pagestyle{myvf}
+
+\newcommand{\clearemptydoublepage}{\newpage{\thispagestyle{empty}\cleardoublepage}}
+%
+\makeindex
+
+\usepackage{import}
+
+\usepackage{lipsum}
+\usepackage{subcaption}
+\usepackage{amsfonts}
+\usepackage[centertags]{amsmath}
+\usepackage{stmaryrd}
+\usepackage{pgfplots}
+\pgfplotsset{yticklabel style={text width=3em,align=right}}
+
+%%% ETOC — remplace minitoc pour les sommaires de chapitres
+\usepackage{etoc}
+
+\newcommand{\chaptertoc}{%
+  \begingroup
+  \etocsettocstyle{\noindent\textbf{Contents}\vskip 4pt\hrule\vskip 4pt}{\vskip 4pt\hrule\bigskip}%
+  \etocsetnexttocdepth{2}%
+  \localtableofcontents
+  \endgroup
+}
+\usepackage{xltabular}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{newlfont}
+\usepackage{layouts}
+\usepackage{graphicx}
+\usepackage{longtable,rotating}
+
+\usepackage{url}
+\usepackage{etex}
+\usepackage{fixltx2e}
+\usepackage[french]{babel}
+\usepackage{memhfixc}
+\usepackage{color}
+
+\usepackage{enumerate}
+\usepackage{footnote}
+\usepackage{afterpage}
+\usepackage{listings}
+\usepackage[object=vectorian]{pgfornament}
+\usetikzlibrary{shapes.geometric,calc}
+\definecolor{fondpaille}{cmyk}{0,0,0.1,0}
+\usepackage{pagecolor}
+\usepackage{microtype}
+\usepackage{rotfloat}
+\usepackage{alltt}
+
+\tcbset{
+    Baystyle/.style={
+        sharp corners,
+        enhanced,
+        boxrule=6pt,
+        colframe=OliveGreen,
+        height=600pt,
+        width=500pt,
+        borderline={8pt}{-11pt}{},
+    }
+}
+
+\widowpenalty=1000
+\clubpenalty=1000
+%
+\newcommand{\keywords}[1]{\par\noindent{\small{\bf Keywords:} #1}}
+\newcommand{\parcial}[2]{\frac{\partial#1}{\partial#2}}
+\newcommand{\vectorr}[1]{\mathbf{#1}}
+\newcommand{\vecol}[2]{\left(
+	\begin{array}{c} 
+		\displaystyle#1 \\
+		\displaystyle#2
+	\end{array}\right)}
+\newcommand{\mados}[4]{\left(
+	\begin{array}{cc}
+		\displaystyle#1 &\displaystyle #2 \\
+		\displaystyle#3 & \displaystyle#4
+	\end{array}\right)}
+\newcommand{\pgftextcircled}[1]{
+    \setbox0=\hbox{#1}%
+    \dimen0\wd0%
+    \divide\dimen0 by 2%
+    \begin{tikzpicture}[baseline=(a.base)]%
+        \useasboundingbox (-\the\dimen0,0pt) rectangle (\the\dimen0,1pt);
+        \node[circle,draw,outer sep=0pt,inner sep=0.1ex] (a) {#1};
+    \end{tikzpicture}
+}
+\newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+\newcommand{\myrowcolour}{\rowcolor[gray]{0.925}}
+
+\newcommand{\range}[1]{\textnormal{range }#1}
+\newcommand{\innerp}[2]{\left\langle#1,#2\right\rangle}
+\newcommand{\prom}[1]{\left\langle#1\right\rangle}
+\newcommand{\tra}[1]{\textnormal{tra} \: #1}
+\newcommand{\sign}[1]{\textnormal{sign\,}#1}
+\newcommand{\sech}[1]{\textnormal{sech} #1}
+\newcommand{\diag}[1]{\textnormal{diag} #1}
+\newcommand{\arcsech}[1]{\textnormal{arcsech} #1}
+\newcommand{\arctanh}[1]{\textnormal{arctanh} #1}
+
+\newcommand{\blackged}{\hfill$\blacksquare$}
+\newcommand{\whiteged}{\hfill$\square$}
+\newcounter{proofcount}
+\renewenvironment{proof}[1][\proofname.]{\par
+ \ifnum \theproofcount>0 \pushQED{\whiteged} \else \pushQED{\blackged} \fi%
+ \refstepcounter{proofcount}
+ \normalfont 
+ \trivlist
+ \item[\hskip\labelsep
+       \itshape
+   {\bf\em #1}]\ignorespaces
+}{%
+ \addtocounter{proofcount}{-1}
+ \popQED\endtrivlist
+}
+%
+\let\oldsqrt\sqrt
+\def\sqrt{\mathpalette\DHLhksqrt}
+\def\DHLhksqrt#1#2{%
+\setbox0=\hbox{$#1\oldsqrt{#2\,}$}\dimen0=\ht0
+\advance\dimen0-0.2\ht0
+\setbox2=\hbox{\vrule height\ht0 depth -\dimen0}%
+{\box0\lower0.4pt\box2}}
+%
+\newcommand{\mycaption}[2][\@empty]{
+	\captionnamefont{\scshape} 
+	\changecaptionwidth
+	\captionwidth{0.9\linewidth}
+	\captiondelim{.\:} 
+	\indentcaption{0.75cm}
+	\captionstyle[\centering]{}
+	\setlength{\belowcaptionskip}{10pt}
+	\ifx \@empty#1 \caption{#2}\else \caption[#1]{#2}
+}
+\newcommand*\circled[1]{\tikz[baseline]{\node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
+
+\newcommand{\mysubcaption}[2][\@empty]{
+	\subcaptionsize{\small}
+	\hangsubcaption
+	\subcaptionlabelfont{\rmfamily}
+	\sidecapstyle{\raggedright}
+	\setlength{\belowcaptionskip}{10pt}
+	\ifx \@empty#1 \subcaption{#2}\else \subcaption[#1]{#2}
+}
+%
+\newcommand{\sectionlinetwo}[2]{%
+  \nointerlineskip \vspace{.5\baselineskip}\hspace{\fill}
+  {\color{#1}
+    \resizebox{0.5\linewidth}{2ex}
+    {{%
+    {\begin{tikzpicture}
+    \node  (C) at (0,0) {};
+    \node (D) at (9,0) {};
+    \path (C) to [ornament=#2] (D);
+    \end{tikzpicture}}}}}%
+    \hspace{\fill}
+    \par\nointerlineskip \vspace{.5\baselineskip}
+  }
+%
+\usepackage{Carrickc,ArtNouvc,Kramer,Konanur,Rothdn}
+\usepackage{lettrine}
+\newcommand{\initial}[1]{%
+	\lettrine[lines=3,lhang=0.33,nindent=0em]{
+		\color{darkgray}
+     		{\textsc{#1}}}{}}
+     		
+\newcommand{\corner}[1]{%
+  \begin{tikzpicture}[color=darkgray,remember picture, overlay]
+    \node[anchor=north west] at (current page.north west){%
+      \pgfornament[width=2cm]{#1}};
+    \node[anchor=north east] at (current page.north east){%
+      \pgfornament[width=2cm,symmetry=v]{#1}};
+    \node[anchor=south west] at (current page.south west){%
+      \pgfornament[width=2cm,symmetry=h]{#1}};
+    \node[anchor=south east] at (current page.south east){%
+      \pgfornament[width=2cm,symmetry=c]{#1}};
+  \end{tikzpicture}%
+}
+\newcommand{\cornerplus}[2]{%
+  \begin{tikzpicture}[color=darkgray,remember picture, overlay]
+    \node[anchor=north west] at (current page.north west){%
+      \pgfornament[width=2cm]{#1}};
+    \node[anchor=north east] at (current page.north east){%
+      \pgfornament[width=2cm,symmetry=v]{#1}};
+    \node[anchor=south west] at (current page.south west){%
+      \pgfornament[width=2cm,symmetry=h]{#1}};
+    \node[anchor=south east] at (current page.south east){%
+      \pgfornament[width=2cm,symmetry=c]{#1}};
+    \node[anchor=north] at (current page.north){%
+      \pgfornament[width=6.5cm,symmetry=h]{#2}};
+    \node[anchor=south] at (current page.south){%
+      \pgfornament[width=6.5cm]{#2}};
+  \end{tikzpicture}%
+}
+\newcommand{\pt}[1]{%
+  \begin{tikzpicture}[color=darkgray,remember picture, overlay]
+    \node[anchor=north] at (current page.north){%
+      \pgfornament[symmetry=h]{#1}};
+    \node[anchor=south] at (current page.south){%
+      \pgfornament[symmetry=h]{#1}};
+  \end{tikzpicture}%
+}
+%
+\AtBeginDocument{\renewcommand{\bibname}{R\'ef\'erences bibliographiques}}
+\AtBeginDocument{\renewcommand{\refname}{R\'ef\'erences bibliographiques}}
+
+\theoremstyle{plain}
+\newtheorem{theo}{Theorem}[chapter]
+\theoremstyle{plain}
+\newtheorem{prop}{Proposition}[chapter]
+\theoremstyle{plain}
+\theoremstyle{definition}
+\newtheorem{dfn}{Definition}[chapter]
+\theoremstyle{plain}
+\newtheorem{lema}{Lemma}[chapter]
+\theoremstyle{plain}
+\newtheorem{cor}{Corollary}[chapter]
+\theoremstyle{plain}
+\newtheorem{resu}{Result}[chapter]
+%
+\hyphenation{res-pec-tively}
+\hyphenation{mono-ti-ca-lly}
+\hyphenation{hypo-the-sis}
+\hyphenation{para-me-ters}
+\hyphenation{sol-va-bi-li-ty}
+%
+\usepackage[acronym]{glossaries}
+\makeglossary
+
+\newacronym{enspy}{ENSPY}{\'{E}cole Nationale Sup\'{e}rieure Polytechnique Yaounde}
+\newacronym{uy1}{UY1}{Université de Yaounde I}
+\newacronym{imt}{IMT}{IMT Atlantique}
+\newacronym{ls2n}{LS2N}{Laboratoire des Sciences du Numérique de Nantes}
+\newacronym{iota}{IOTA}{IOT \& Applications}
+
+\newglossaryentry{bench}
+{
+	name = Benchmark,
+    description = {In computer science, a benchmark is a test to measure the performance of a system to compare it to others},
+    plural = benchmark
+}
+
+\newglossaryentry{bus}
+{
+	name = Bus,
+     description = {In computer science, a bus is a communication system that transfers data between components inside a computer, or between computers.},
+    plural = bus
+}
+
+\newglossaryentry{ops}
+{
+    name=Open source,
+    description={The open source designation, or "open source code", applies to software whose license meets criteria precisely established by the Open Source Initiative, that is, the possibilities of free redistribution, access to source code and the creation of derivative works.},
+    plural=open source
+}
+
+\newglossaryentry{interrupt}
+{
+	name = Interrupt,
+    description = {An interrupt is a signal from a device attached to a computer or from a program within the computer that requires the operating system to stop and figure out what to do next},
+    plural = interrupt
+}
+
+\newglossaryentry{sc}
+{
+	name = Source code,
+    description = {A source code is a text that represents a program instructions as written by a programmer.},
+    plural = source code
+}
+
+
+\usepackage{chngcntr}
+\usepackage[section]{placeins}  
+\usepackage{titletoc}
+
+% ===================== HYPERREF (chargé en dernier) =====================
+\usepackage[colorlinks=true,
+            linkcolor=black,
+            citecolor=black,
+            urlcolor=blue,
+            linktoc=all,
+            pdfusetitle]{hyperref}
+% =======================================================================
+
+\begin{document}
+\sloppy
+
+\lstloadlanguages{bash, Java, sql, python}
+\lstset{basicstyle=\small,
+    keywordstyle=\color{blue}\ttfamily,
+    identifierstyle=\ttfamily,
+    commentstyle=\color{green}\itshape\ttfamily,
+    stringstyle=\sffamily,
+    showstringspaces=false,
+    numbers=left,
+    numberstyle=\tiny}
+
+\frontmatter
+\pagenumbering{roman}
+%
+\input{frontmatter/title}
+\cleardoublepage
+
+\input{frontmatter/title2}
+\cleardoublepage
+%
+% Dédicace
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Dédicace}
+\input{frontmatter/dedication}
+\clearemptydoublepage
+%
+% Déclaration
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Déclaration}
+\input{frontmatter/declaration}
+\clearemptydoublepage
+%
+% Résumé
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Résumé}
+\input{frontmatter/resume}
+\clearemptydoublepage
+%
+% Abstract
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Abstract}
+\input{frontmatter/abstract}
+\clearemptydoublepage
+%
+% Glossaire (sigles et abréviations)
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Sigles et Abréviations}
+\input{frontmatter/glossaries}
+\clearemptydoublepage
+
+%
+\renewcommand{\contentsname}{Table des Mati\`eres}
+\maxtocdepth{subsection}
+
+%%% MINITOC SUPPRIMÉ — plus besoin de \dominitoc ni \mtcsetdepth
+% Table des matières
+\phantomsection
+\tableofcontents
+\markboth{TABLE DES MATI\`ERES}{}
+
+% Liste des figures
+\cleardoublepage
+\phantomsection
+% Liste des figures
+\cleardoublepage
+\phantomsection            % Nécessite hyperref, sinon à supprimer
+\addtocontents{lof}{\par\nobreak\textbf{\scshape Figure \hfill Page}\par\nobreak}  % Déplacé AVANT
+\listoffigures             % Sans l'astérisque
+\cleardoublepage
+
+% Liste des tableaux
+\cleardoublepage
+\phantomsection            % Nécessite hyperref, sinon à supprimer
+\addtocontents{lot}{\par\nobreak\textbf{\scshape Tableau \hfill Page}\par\nobreak} % lot ET déplacé AVANT
+\listoftables              % Sans l'astérisque
+\cleardoublepage           % Remplacé ici
+\clearemptydoublepage
+%
+
+\clearemptydoublepage
+%
+
+\mainmatter
+%
+\import{chapters/chapter01/}{chap01.tex}
+\import{chapters/chapter03/}{chap03.tex}
+\import{chapters/chapter04/}{chap04.tex}
+%
+\backmatter
+\bibliographystyle{plain}
+\refstepcounter{chapter}
+\markboth{R\'EF\'ERENCES BIBLIOGRAPHIQUES}{}
+\bibliography{biblio}
+\clearemptydoublepage
+%
+\clearemptydoublepage
+%   
+\end{document}

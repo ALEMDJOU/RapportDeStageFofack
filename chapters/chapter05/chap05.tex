@@ -1,0 +1,825 @@
+\let\textcircled=\pgftextcircled
+\chapter{Impl\'ementation et r\'esultats}
+\label{chap:implementation}
+
+\textit{\initial{D}ans ce chapitre, on va présenter d'une part l'implémentation à travers les différentes étapes par lesquelles nous sommes passés; et, d'autre part, les résultats que l'on a obtenu à l'issu de ce stage.  }
+
+\minitoc
+\mtcselectlanguage{french}
+\newpage
+
+\section{Impl\'emetation}
+\subsection{Cr\'eation d'une image avec supervisord}
+Plus tard, il a aussi fallu g\'erer une autre pr\'eoccupation concernant l'image qui devait tourner \`a la fin. C'est-\`a-dire, soit l'API dans la base de donn\'ees, soit la base de donn\'ees dans l'API. Il a sembl\'e plus coh\'erent que ce soit l'API dans la base de donn\'ees car le serveur de base 
+de donn\'ees doit tourner avant l'API pour que l'ensemble fonctionne correctement. D\`es lors, nous nous sommes plus int\'eress\'es en d\'etail \`a comment on pouvait avoir plusieurs processus dans un conteneur avec \cite{postgres-supervisord} et \cite{multiple-services-docker}.
+
+Ensuite, nous avons commenc\'e \`a modifier notre Dockerfile pour que ce soit soit le conteneur serveur de base de donn\'ees qui re\c{c}oive l'API en copiant le dossier \lstinline{/app} g\'en\'er\'e lors de la compilation de notre API pour le coller dans un dossier du serveur de base de donn\'ees, mais \'egalement 
+r\'earranger le Dockerfile de fa\c{c}on globale pour avoir une compilation effective. Connaissant la difficult\'e que ce serait de lancer les deux processus correctement en m\^eme temps, nous avons d\'ecid\'e de nous concentrer \`a d'abord faire marcher chacun d'eux correctement de fa\c{c}on individuelle. 
+Ce qui f\^ut le cas de notre API suivant \cite{node-supervisor}.
+
+Gr\^ace \`a \cite{node-supervisor}, on voit qu'il est n\'ecessaire d'avoir un serveur Nginx \footnote{que l'on installera et configurera avec un fichier de configuration} et un script o\`u on entrera les commandes n\'ecessaires pour le lancement de l'API. Cependant, sachant que notre API 
+a \'et\'e compil\'ee avec \lstinline{WORKDIR /app} pour faciliter la r\'esolution des chemins relatifs et s'assurer d'\^etre dans le bon dossier pour effectuer des commandes. Ce que nous avons pu pallier en rempla\c{c}ant tous les chemins relatifs dans le code de l'API par des chemins absolus. 
+De plus, on se retrouve \`a copier tout le dossier \lstinline{/app} donc aussi le dossier \lstinline{/node_modules} g\'en\'er\'e, ce qui peut entra\^iner des erreurs inattendues. Dans notre cas, il y a eu un probl\`eme avec le module \lstinline{dotenv} qui n'arrivait pas \`a se charger, ce qui 
+nous a pouss\'e \`a commenter toute ligne o\`u \lstinline{dotenv} pouvait figurer tout en arr\^etant d'utiliser les variables d'environnement. En effectuant tout \c{c}a, jusqu'aux instructions de \cite{node-supervisor}, on arrive \`a lancer l'API.
+
+Concernant la base de donn\'ees, nous avons d\'ecid\'e de comprendre le processus de d\'emarrage d'un serveur PostgreSQL, car ce sera \`a nous d'\'ecrire les commandes permettant de d\'emarrer le serveur. Pour ce faire, on utilise toujours le volume contenant les donn\'ees de notre base de donn\'ees charg\'ee. 
+Cette approche g\'en\`ere beaucoup de conflits notamment avec le montage du volume et les probl\`emes de permissions associ\'es aux fichiers n\'ecessaires nous ont largement entrav\'e. 
+
+C'est pourquoi, sachant que l'on manipule une image \lstinline{postgres}. Nous avons d\'ecid\'e de nous int\'eresser \`a la proc\'edure de lancement de cette derni\`ere en allant fouiller sur leur d\'ep\^ot GitHub \cite{postgres-docker-repo} o\`u nous avons d\'ecouvert que le lancement d'un conteneur postgres 
+\'etait ex\'ecut\'e par le script \lstinline{docker-entrypoint.sh} qui prend comme argument \lstinline{postgres} tel que \lstinline[breaklines]{docker-entrypoint.sh postgres}. Et c'est cette commande que nous allons utiliser avec \lstinline{supervisor} pour lancer notre serveur PostgreSQL 
+car il s'agit de la fa\c{c}on officielle de d\'emarrer.
+
+Enfin, ayant effectu\'e toutes ces configurations, on compile notre image qu'on arrive \`a lancer avec la commande :
+\begin{lstlisting}[frame=single, language=bash, breaklines]
+docker run --name back -e PGDATA=postgres-data -p 3000:3000 
+\end{lstlisting} 
+car on a notre image qui continue \`a utiliser le volume contenant nos donn\'ees et exposant le port 3000 pour communiquer avec l'API. Lors de la premi\`ere initialisation du conteneur, le serveur PostgreSQL prend du temps pour se lancer et 
+charger la base de donn\'ees qui entra\^ine l'\'echec de la connexion de l'API \`a la base de donn\'ees. Cependant, apr\`es avoir arr\^et\'e et relanc\'e le conteneur, tout fonctionne normalement.
+\subsection{Notions de tests fonctionnels avec Hurl}
+Pour ce faire, il sera question d'utiliser Hurl pour \'ecrire des requ\^etes HTTP \`a notre API. Mais pas seulement, on doit aussi \^etre en mesure de v\'erifier que la r\'eponse renvoy\'ee est correcte et m\^eme d'estimer le d\'elai de r\'eponse ou en imposer un. 
+D'o\`u la notion de test, car si l'une des propri\'et\'es d\'efinies n'est pas v\'erifi\'ee, cela va automatiquement entrainer l'\'echec des tests.
+
+Ainsi, nous avons d\'ecid\'e d'apprendre \`a utiliser Hurl, lou\'ee pour sa facilit\'e d'utilisation. En effet, on d\'efinit nos requ\^etes dans un format de texte tr\`es simple que l'on enregistre dans un fichier \`a l'extension \lstinline{.hurl} 
+puis que l'on utilise avec la commande \lstinline!hurl test.hurl!
+
+Si aucun fichier n'est fourni en entr\'ee, Hurl va consid\'erer l'entr\'ee standard tel qu'on ait : \lstinline[language=bash]{echo GET http://example.org | hurl}. De fa\c{c}on globale, Hurl se comporte comme cURL\footnote{Interface en ligne de commande, 
+destin\'ee \`a r\'ecup\'erer le contenu d'une ressource accessible par un r\'eseau informatique.} et aura tendance \`a afficher le r\'esultat de la requ\^ete de telle sorte que l'on obtienne :
+\begin{lstlisting}[language=bash, frame=single, title={Comportement cURL}, breaklines]
+$ echo GET http://httpbin.org/get | hurl
+{
+"args": {},
+"headers": {
+"Accept": "*/*",
+"Accept-Encoding": "gzip",
+"Content-Length": "0",
+"Host": "httpbin.org",
+"User-Agent": "hurl/0.99.10",
+"X-Amzn-Trace-Id": "Root=1-5eedf4c7-520814d64e2f9249ea44e0"
+},
+"origin": "1.2.3.4",
+"url": "http://httpbin.org/get"
+}
+\end{lstlisting}
+
+Sachant que notre objectif est de : d\'efinir des tests, pouvoir voir le nombre de tests effectu\'es, voir le nombre de tests pass\'es et \'evaluer le temps de r\'eponse sans avoir \`a afficher le contenu des requ\^etes. Il existe l'option \lstinline{--test} pour qu'on ait :
+\lstinline{hurl --test *.hurl}.
+
+Connaissant cela, il ne nous reste plus qu'\`a apprendre \`a \'ecrire des tests. Fort heureusement, Hurl met \`a notre disposition son format de fichier gr\^ace auquel on peut pleinement profiter de son potentiel. En effet, ce fichier consiste en une s\'erie de requ\^etes 
+qui seront ex\'ecut\'ees tour \`a tour et dont on aura le r\'esultat.\\
+\begin{lstlisting}[language=bash, frame=single, title={*.hurl}]
+GET http://example.org/endpoint1
+GET http://example.org/endpoint2
+\end{lstlisting}
+
+D\`es lors, on peut commencer \`a \'ecrire des tests en commen\c{c}ant par la requ\^ete puis le code de r\'eponse HTTP attendu.
+\begin{lstlisting}[language=bash, frame=single, title={*.hurl}, breaklines]
+# Avec cette requete, on s'attend a recevoir une reponse OK
+GET http://example.org/endpoint1
+HTTP 200
+\end{lstlisting}
+
+Bien que ce soit d\'ej\`a int\'eressant, notre objectif n'est pas seulement d'avoir le code de r\'eponse de la requ\^ete mais \'egalement de pouvoir v\'erifier son contenu. C'est pourquoi Hurl int\`egre \lstinline{asserts} comme l'illustre 
+la figure~\ref{fig:xpath-asserts} dans le cadre d'un test avec du HTML utilisant \lstinline{XPath asserts}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{fig05/xpath.png}
+\caption{Structure d'un assert pour le test du HTML \cite{Hurl}}
+\label{fig:xpath-asserts}
+\end{figure}
+
+Par cons\'equent, on aurait pour un test qui v\'erifie si une page HTML renvoy\'ee par la requ\^ete a bien le titre "Morning".
+\begin{lstlisting}[language=bash, frame=single, title={*.hurl}, breaklines]
+GET http://example.org/endpoint
+
+HTTP 200
+[Asserts]
+xpath "string(//head/title)" == "Morning"
+\end{lstlisting}
+
+On peut \'egalement v\'erifier l'ent\^ete d'une requ\^ete en utilisant \lstinline{header}. Cependant, l'API que l'on souhaite tester est REST et utilise par extension le format JSON, que l'on peut sp\'ecifier avec \lstinline{JSONPath assert}. Par exemple, 
+on pourrait faire une requ\^ete \`a une API REST qui renvoie un objet repr\'esentant un utilisateur dont on aurait son nom et son pr\'enom.
+\begin{lstlisting}[language=bash, frame=single, title={*.hurl}, breaklines]
+GET http://example.org/endpoint
+
+HTTP 200
+[Asserts]
+header "Content-Type" == "application/json; charset=utf8"
+jsonpath "$.firstName" == "John"
+jsonpath "$.lastName" == "Doe"     
+\end{lstlisting}
+
+De plus, on peut manipuler des tableaux d'objets en sp\'ecifiant l'index i correspondant \`a l'objet voulu dont on peut manipuler l'attribut via \lstinline{"$[i].attribut"}. On peut \'egalement d\'efinir les param\`etres de nos requ\^etes et 
+un temps de r\'eponse. Par exemple, si l'on souhaite effectuer la requ\^ete \lstinline{http://example.org/endpoint/tabs?id=2} et v\'erifier qu'elle s'effectue en moins d'une seconde\footnote{Le temps est entr\'e en millisecondes.}, on peut \'ecrire : 
+\begin{lstlisting}[language=bash, frame=single, title={*.hurl}, breaklines]
+GET http://example.org/endpoint/tabs
+[QueryStringParams]
+id: 2
+
+HTTP 200
+[Asserts]
+header "Content-Type" == "application/json; charset=utf8"
+jsonpath "$.firstName" == "John"
+jsonpath "$.lastName" == "Doe"     
+duration < 1000
+\end{lstlisting}
+
+On dispose alors d'assez d'\'el\'ements pour nous consacrer \`a l'\'ecriture du g\'en\'erateur de charge dont le but est d'estimer la performance de notre conteneur sous une affluence variable de requ\^etes.
+
+% Journ\'ee du 22/07/2024
+% ~\newline\newline
+\subsection{Cr\'eation d'une image sans volume Docker}
+On doit faire en sorte que l'image Docker de la base de donn\'ees contienne directment les donn\'ees sans avoir recours \`a un volume. Pour ce faire, 
+nous avons d\'ecid\'e de revoir nos fondamentaux notamment sur l'\'ecriture d'un Dockerfile ou ce que peut nous renseigner le d\'ep\^ot officiel de l'image Docker PostGIS/PostgreSQL utilis\'ee ~\cite{docker-postgres}.
+
+Cela nous a amen\'e \`a nous rappeler du probl\`eme que l'on avait eu concernant la cr\'eation des utilisateurs avant le lancement du conteneur et le fait qu'il existait un dossier dans le syst\`eme de fichiers de
+l'image Docker de PostgreSQL charg\'ee de l'initialisation\footnote{Lors du lancement du conteneur, ce dossier sera v\'erifi\'e et s'il y a des scripts, ils seront ex\'ecut\'es.} de scripts \lstinline{.sh} et 
+\lstinline{.sql}. Il s'agit du dossier \lstinline{/docker-entrypoint-initdb.d}.
+
+Cependant, on ne l'a pas directement utilis\'e, on a d'abord commenc\'e par lancer notre serveur de base de donn\'ees, ensuite on a eu \`a cr\'eer les utilisateurs n\'ecessaires et effectuer un 
+\lstinline{docker commit}  de notre conteneur; afin d'obtenir une image de serveur ayant ces utilisateurs, pour faciliter l'initialisation de la base de donn\'ees. Cependant, 
+au lancement de cette image, on a eu la r\'eponse selon laquelle les utilisateurs voulus n'existaient pas.
+% \section{Journ\'ee du 23/07/2024}
+
+\subsection{Tests de validit\'e et de performance}
+
+Par la suite, nous avons commenc\'e \`a appliquer la m\'ethode pr\'econis\'ee pour l'\'elaboration du g\'en\'erateur de charge. On s'est alors mis \`a cr\'eer le fichier \lstinline{.hurl} n\'ecessaire 
+pour \'evaluer la performance et valider la requ\^ete utilisant Hurl. Pour ce faire, on va utiliser la requ\^ete \url{http://<adresse-ip>:3000/geolocdpe/api/v0/dpe/get?topLeft=6692755.6320129
+22,348070.5115176897&bottomRight=6686698.84754637,363102.02091083454} comme support. Gr\^ace \`a elle, on peut voir que notre API renvoie un tableau d'objets. Ainsi, pour v\'erifier la validit\'e, 
+on n'a qu'\`a v\'erifier que tous les objets du tableau ont un id, ce que repr\'esente la ligne 8.
+
+\begin{lstlisting}[language=bash, frame=single, title={load.hurl}, breaklines]
+GET http://<adresse-ip>:3000/geolocdpe/api/v0/dpe/get
+[QueryStringParams]
+topLeft: 6692755.632012922,348070.5115176897
+bottomRight: 6686698.84754637,363102.02091083454 
+
+HTTP 200
+[Asserts]
+jsonpath "$.*.id" exists
+\end{lstlisting}
+
+Ayant \'ecrit ce fichier, on peut l'utiliser pour \'evaluer la performance de notre API en utilisant la commande :
+
+\begin{lstlisting}[language=bash, frame=single, title={Commande Docker}, breaklines]
+$ docker run --rm -v ./load.hurl:/tmp/load.hurl -w /tmp ghrc.io/orange-opensource/hurl:latest --test --color /tmp/load.hurl
+\end{lstlisting}
+
+On a donc le r\'esultat pr\'esent\'e \`a la figure~\ref{fig:result-req-hurl}. On voit qu'on a un temps de r\'eponse de 772 millisecondes. 
+Cela repr\'esente la performance de notre API suivant une requ\^ete, sachant que la valeur peut changer si on la r\'eex\'ecute, 
+on ne saurait la prendre comme valeur de r\'ef\'erence. C'est donc pour \c{c}a que l'on va adopter une approche na\"ive consistant \`a 
+faire la moyenne de 10 requ\^etes et prendre la moyenne comme r\'ef\'erence. 
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/result_1_req_hurl.png}
+\caption{R\'esultat d'une requ\^ete sur Hurl}
+\label{fig:result-req-hurl}
+\end{figure}
+
+On va donc modifier notre fichier \lstinline{load.hurl} pour y mettre 10 requ\^etes et l'ex\'ecuter. On obtient le r\'esultat 
+pr\'esent\'e \`a la figure~\ref{fig:result-10-req-hurl}. On voit qu'on a une dur\'ee de 7438 millisecondes. En divisant par 10, on a 743,8 millisecondes qui repr\'esente la performance d\'esir\'ee par requ\^ete et donc notre tol\'erance. 
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/result_10_req_hurl.png}
+\caption{R\'esultat de 10 requ\^etes successives sur Hurl}
+\label{fig:result-10-req-hurl}
+\end{figure}
+
+Ayant ainsi d\'efini notre tol\'erance, il est maintenant question de d\'efinir la charge maximale du syst\`eme utilisant hurl.
+
+% \section{Journ\'ee du 24/07/2024}
+% ~\newline\newline
+Nous nous sommes ainsi document\'es sur l'utilisation de hurl et des outils dont il est inspir\'e : Siege \cite{siege-readme} et wrk \cite{wg-wrk}.
+
+En effet, en lisant la documentation de hurl, nous l'avons trouv\'e insuffisante pour pleinement comprendre ce qu'elle proposait et en faire le tour. 
+C'est dans cette optique nous avons d\'ecid\'e d'aller voir du c\^ot\'e de Siege et wrk, vu qu'il en est fait mention dans la documentation de hurl. 
+On s'est rendu compte qu'ils fonctionnaient globalement de la m\^eme fa\c{c}on sauf que Siege nous permet de sp\'ecifier nos diff\'erentes requ\^etes 
+dans un fichier texte tandis que wrk permet d'\'ecrire et d'ex\'ecuter des scripts Lua pour r\'ealiser les tests. 
+Mais \'egalement, ils se distinguent au niveau des donn\'ees renvoy\'ees \`a la fin du test; bien qu'ils permettent de d\'efinir le nombre d'utilisateurs simul\'es, 
+le nombre de threads, le nombre de requ\^etes et la dur\'ee. On va donc pr\'esenter ce que retourne chaque outil. On a notamment pour hurl.
+    \begin{lstlisting}[frame=single, language=bash, title={Output de hurl},breaklines]
+$ hurl "https://google.com" --calls=100 -p100 -f1000
+
+Running 1 threads 100 parallel connections per thread with 100 requests per connection
++-----/-----+------+------+-----------+------+-----+-----+
+|Cpted/Rqted|IdlKil|Errors|kBytesRecvd|Elpsed|Req/s|MB/s |
++-----/-----+------+------+-----------+------+-----+-----+
+|  572/  665|     0|     0|     334.43| 1.00s|1118s|0.33s|
+| 1000/ 1000|     0|     0|     257.73| 1.50s|668s |0.25s|
+|
+| RESULTS:             ALL
+| fetches:             1000
+| max parallel:        100
+| bytes:               3.644410e+05
+| seconds:             1.501000
+| mean bytes/conn:     364.441000
+| fetches/sec:         666.222518
+| bytes/sec:           2.427988e+05
+| HTTP response codes: 
+| 200 -- 1000
+    \end{lstlisting}
+
+Puis pour wrk.
+\begin{lstlisting}[frame=single, title={Output de wrk},breaklines]
+$ wrk -t12 -c400 -d30s http://127.0.0.1:8080/index.html   
+
+Running 30s test @ http://127.0.0.1:8080/index.html
+12 threads and 400 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+Latency   635.91us    0.89ms  12.92ms   93.69%
+Req/Sec    56.20k     8.07k   62.00k    86.54%
+22464657 requests in 30.00s, 17.76GB read
+Requests/sec: 748868.53
+Transfer/sec:    606.33MB
+\end{lstlisting}
+
+Et enfin pour siege.
+
+\begin{lstlisting}[frame=single,title={Output de siege},breaklines]
+$ siege -u shemp.whoohoo.com/Admin.jsp -d1 -r10 -c25
+
+..Siege 2.65 2006/05/11 23:42:16
+..Preparing 25 concurrent users for battle.
+The server is now under siege...done
+Transactions: 250 hits
+Elapsed time: 14.67 secs
+Data transferred: 448000 bytes
+Response time: 0.43 secs
+Transaction rate: 17.04 trans/sec
+Throughput: 30538.51 bytes/sec
+Concurrency: 7.38
+Status code 200: 250
+Successful transactions: 250
+Failed transactions: 0    
+\end{lstlisting}
+
+On peut ainsi \`a partir des r\'esultats retourn\'es choisir les caract\'eristiques que l'on souhaite \'etudier lors de nos tests.
+
+On a effectu\'e une s\'erie de diff\'erentes requ\^etes de fa\c{c}on successive afin d'\'evaluer la performance. 
+On s'est toujours retrouver dans une moyenne de 700 millisecondes. Cependant, en lan\c{c}ant deux processus diff\'erents 
+simultan\'ement : l'un effectuant 10 requ\^etes pareilles et l'autre 10 requ\^etes diff\'erentes \`a notre API; 
+on a vu que chaque processus a pris moins de 15 secondes.
+
+% \section{Journ\'ee du 25/07/2024}
+% ~\newline\newline
+Nous avons continu\'e \`a utiliser hurl avec divers param\`etres pour tester notre image personnalis\'ee \lstinline{bd-api}, 
+notamment le nombre de connexions parall\`eles envoyant un nombre donn\'e de requ\^etes. On \'ecrivait une commande dans 
+le style de celle qui est pr\'esent\'ee en dessous o\`u on cr\'ee 10 connexions parall\`eles, chaque connexion effectuant 
+la requ\^ete 2 fois durant un d\'elai de 30 secondes.
+
+\begin{lstlisting}[frame=single, language=bash, title={Exemple de commande hurl}, breaklines]
+$ hurl "http://<adresse-ip>:3000/geolocdpe/api/v0/dpe/get?topLeft=6692755.632012922,348070.5115176897&bottomRight=6686698.84754637,363102.02091083454" --calls=100 -p10 -f2 --timeout=30
+\end{lstlisting}
+
+D\`es lors, nous nous sommes rendus compte que l'on ne recevait plus de r\'eponse. On a donc d\'ecid\'e d'inspecter les journaux 
+de notre conteneur en entrant \lstinline{docker logs bd-api} pour voir ce qu'il s'est pass\'e. On a vu qu'il y \'etait \'ecrit : 
+\lstinline[breaklines]{error: could not resize shared memory segment "/PostgreSQL.222067968" to 4194304 bytes: No space left on device}.
+
+Cela est une erreur provenant de notre base de donn\'ees PostgreSQL sp\'ecifiant que la m\'emoire partag\'ee est trop faible pour pouvoir r\'epondre 
+\`a toutes les requ\^etes. En effet, l'extension utilis\'ee\footnote{PostGIS} utilis\'ee dans notre base de donn\'ees utilise intensivement la m\'emoire 
+partag\'ee pour effectuer des calcus g\'eospatiaux ou stocker temporairement des r\'esultats interm\'ediaires. Ainsi, plusieurs requ\^etes en m\^eme temps 
+ont vite satur\'e la m\'emoire. Ce probl\`eme peut \^etre palli\'e lors de la cr\'eation du conteneur comme le pr\'esente \cite{stack-not-resize-memory}; 
+car Docker limite la taille partag\'ee d'un conteneur \`a 64 Mo, ce qu'on peut m\^eme augmenter jusqu'\`a 1 Go lors de la cr\'eation du conteneur. 
+On va donc arr\^eter notre conteneur, le supprimer et le cr\'eer de nouveau en entrant la commande suivante :
+\begin{lstlisting}[frame=single, language=bash, title={Cr\'eation de conteneur avec une plus grande m\'emoire partag\'ee},breaklines]
+$ docker run --name bd-api -p 3000:3000 -e PGDATA=postgres-data -d --shm-size=1g bd-api
+\end{lstlisting}
+
+Par la suite, on a recommenc\'e \`a avoir des r\'eponses. Cependant, en augmentant le nombre de connexions parall\`eles jusqu'\`a 10 000, 
+on a vu que hurl n'arrivait pas effectuer les requ\^etes en affichant le message d'erreur : 
+\lstinline{Error threads[1]*parallelism[10000] > process fd resource limit[1024]}\footnote{Car il n'utilise qu'un seul thread 
+ne pouvant contenir pas plus de 1024 connexions parall\`eles}. Parvenu jusqu'\`a ce niveau, il f\^ut question de se revoir et de red\'efinir ce que l'on voulait et comment y arriver.
+
+% \section{Journ\'ee du 26/07/2024}
+\subsection{Ecriture du g\'en\'erateur de charge}
+Nous avons commenc\'e en nous rappelant de ce que l'on cherchait : combien le conteneur peut supporter de requ\^etes par seconde sachant qu'il doit r\'epondre en moins d'une seconde \`a 
+chacune d'elle ? S'\'etant souvenu de \c{c}a, il \'etait maintenant question d'\'evaluer le temps moyen de r\'eponse suivant le nombre de requ\^etes par exemple. Pour ce faire, nous avons 
+choisi une approche s\'equentielle o\`u on effectuait une requ\^ete suivant un d\'elai, d'abord chaque seconde puis chaque 900 ms jusqu'\`a 100 ms. Cela nous permet de quitter 
+d'une requ\^ete par seconde \`a 10 requ\^etes par seconde. Pour ce faire, on va d'abord faire le cas pour une requ\^ete similaire puis s'inspirer de Hurl suivant \cite{concurrency-Hurl}. 
+On va donc \'ecrire un script shell que l'on va nommer \lstinline{glob.sh} qui va nous permettre d'automatiser le processus :
+\begin{lstlisting}[frame=single, language=bash, title={glob.sh}, breaklines]
+#!/bin/bash
+# glob.sh
+#   1st argument: duration in seconds
+#   2nd argument: name of the file to store the average time
+
+run(){
+# run
+#   1st argument: time to sleep (delay)
+#   2nd argument: duration
+#   3rd argument: filename to store the average time
+
+counter=0
+sum=0
+duration=$2
+duration_int=$duration
+
+while [ true ] 
+do 
+((counter = $counter + 1)) 
+echo "Requete num: $counter" 
+result=$(docker run --rm -v ./load.hurl:/tmp/load.hurl -w /tmp ghcr.io/orange-opensource/hurl:latest --test --color --json /tmp/load.hurl | jq .time)
+((sum = $sum + $result)) 
+
+sleep $1
+
+duration=$(echo "$duration - $1" | bc)
+duration_int=$(printf "%.0f" $duration)
+echo "On a $duration avec $duration_int"
+if [ $duration_int -lt 0 -o "${duration_int:0:1}" = "-" ]; then
+    break
+fi
+done
+echo -e "$(($sum / $counter))" >> $3
+}
+
+for(( i=0; i<10; i++ )); do
+index=$(echo "1 - 0.$i" | bc)
+run $index $1 $2
+done
+
+python3 glob.py $2
+\end{lstlisting}
+
+Pour \'ecrire ce script, on a d\^u installer \lstinline{jq}\footnote{Outil pour g\'erer le JSON en invite de commande} et \lstinline{bc}\footnote{Calculatrice} avec \lstinline{sudo apt install}. 
+Ce script prend donc en entr\'ee la dur\'ee de notre test pour chaque tour et le nom du fichier o\`u doivent \^etre stock\'ees nos valeurs moyennes \`a chaque tour. Un tour ici, repr\'esente le d\'elai, 
+par exemple une requ\^ete par seconde durant 30 secondes dont 30 requ\^etes et ainsi de suite pour le reste. Sanchant que l'on quitte d'une seconde \`a 100 millisecondes, on aura 10 tours. 
+Enfin, \`a la fin de notre script, un programme Python sera appel\'e pour lire les valeurs dans le fichier qui lui est pass\'e en param\`etre et tracer une courbe repr\'esentant nos r\'esultats. 
+Ce script Python que nous avons nomm\'e \lstinline{glob.py} est pr\'esent\'e tel que suit :
+\begin{lstlisting}[language=python, frame=single, title={glob.py}, breaklines]
+# glob.py 
+#   argument: filename to take the data
+
+import numpy as np 
+import matplotlib.pyplot as plt 
+import sys
+
+def plot(filename):
+rows = []
+tab = []
+with open(filename, 'r') as file:
+rows = file.readlines()
+for row in rows:
+    tab.append(int(row))
+x = np.array(list(range(1, 11)))
+y = np.array(tab)
+
+plt.plot(x, y, label='ms/req/s')
+
+plt.title("Moyenne des requetes par seconde")
+plt.xlabel("Req/s")
+plt.ylabel("Temps moyen ms")
+plt.grid(True)
+plt.legend()
+
+plt.savefig("result.png")
+
+if __name__ == "__main__":
+if len(sys.argv) > 1:
+plot(sys.argv[1])
+else:
+print("Il manque le nom du fichier.")
+\end{lstlisting}
+
+Pour \'ecrire ce script, on a d\^u installer les paquets \lstinline{numpy}\footnote{Biblioth\`eque Python pour g\'erer les tableaux, matrices et calculs sur ces derniers.} et 
+\lstinline{matplotlib}\footnote{Biblioth\`eque Python pour le trac\'e de courbes et graphes.} suivant la commande \lstinline{sudo apt install python3-<paquet>}. 
+Il faudra d'abord s'assurer que notre script shell peut \^etre ex\'ecutable en entrant la commande \lstinline{chmod +x glob.sh}; puis, on peut lancer globalement 
+sur une p\'eriode de 30 secondes, en entrant la commande suivante dans le dossier o\`u se trouvent nos deux scripts :
+\begin{lstlisting}[language=bash, frame=single, title={Ex\'ecution de glob.sh}, breaklines]
+$ sudo ./glob.sh 30 sample.txt
+\end{lstlisting}
+
+A la fin de l'ex\'ecution, les fichiers \lstinline{sample.txt} et \lstinline{result.png} vont se cr\'eer. On peut notamment voir la courbe sur la figure~\ref{fig:courbe_mesure_30s}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/result.png}
+\caption{Courbe r\'esultante des mesures sur 30 s}
+\label{fig:courbe_mesure_30s}
+\end{figure}
+De m\^eme, nos mesures sur chaque tour sont stock\'ees telles que :
+\begin{lstlisting}[frame=single, title={sample.txt}]
+783
+729
+748
+739
+740
+741
+736
+744
+739
+737
+\end{lstlisting}
+
+% \section{Journ\'ee du 29/07/2024}
+\subsection{Am\'elioration du g\'en\'erateur de charge avec g\'en\'eration de requ\^etes al\'eatoires}
+Pour ce faire, nous avons analys\'e la structure de la requ\^ete faite \`a l'API. En effet, celle-ci utilise le syst\`eme de coordonn\'ees L93\footnote{Lambert 93, France m\'etropolitaine.}. 
+Ce syst\`eme de coordonn\'ees repr\'esente les points en m sur deux dimensions : \texttt{x} et \texttt{y}. Notre API requiert sur le endpoint \lstinline{/get} deux points qui sont : 
+le point haut gauche (\lstinline{topLeft}) et le point bas droite (\lstinline{bottomRight}) dont on sp\'eficie les coordonn\'ees s\'epar\'ees par des virgules telles que \lstinline{y,x}. 
+Cela se repr\'esente dans la requ\^ete par \lstinline[breaklines]{http://10.144.208.247:3000/geolocdpe/api/v0/dpe/get?topLeft=y1,x1&bottomRight=y2,x2}.
+
+Alors, il nous est venu l'id\'ee de nous donner un intervalle dans lequel nos coordonn\'ees seraient g\'en\'er\'ees. Sachant que notre base de donn\'ees contient des donn\'ees relatives \`a la France, 
+il f\^ut donc question de choisir un intervalle s\^ur pour lequel il n'y aurait pas d'erreur. Pour ce faire, nous nous sommes aid\'es de \cite{geoportail} qui nous a permis de choisir nos points 
+comme l'illustre la figure~\ref{fig:limites_gen_alea}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{fig05/limite.png}
+\caption{Limites pour la g\'en\'eration al\'eatoire}
+\label{fig:limites_gen_alea}
+\end{figure}
+
+Bien que cet intervalle ne recouvre pas toute la France, il nous permet de tester l'API et de toujours avoir des requ\^etes qui marchent. Ayant choisi nos points, on note les coordonn\'ees :
+\begin{itemize}
+\item [\textbullet] \texttt{topLeft (x = 441423.15 et y = 6763025.44)}
+\item [\textbullet] \texttt{bottomRight (x = 500455.83 et y = 6638807.60)}
+\end{itemize}
+
+Avec cette approche, il s'agit de modifier notre code et ajouter une fonction qui va g\'en\'erer al\'eatoirement un nombre dans les intervalles d\'efinis puis \'ecrire dans le fichier 
+utilis\'e pour effectuer des requ\^etes\footnote{Le fichier Hurl load.hurl.}. On va donc ajouter les lignes qui suivent dans notre script :
+\begin{lstlisting}[frame=single, language=bash, title={Lignes \`a ajouter dans glob.sh}, breaklines]
+write_file() {
+text="GET http://10.144.208.247:3000/geolocdpe/api/v0/dpe/get\n[QueryStringParams]\ntopLeft: $2,$1\nbottomRight: $4,$3\n\nHTTP 200\n[Asserts]\njsonpath \"\$.*.id\" exists"
+echo -e "$text" > "load.hurl"
+}
+
+x1=$(python3 generateCoordinates.py 1)
+x2=$(python3 generateCoordinates.py 1)
+y1=$(python3 generateCoordinates.py 2)
+y2=$(python3 generateCoordinates.py 2)
+
+write_file $x1 $y1 $x2 $y2
+\end{lstlisting}
+
+Ces lignes repr\'esentent une fonction qui prend en param\`etre les 04 valeurs de coordonn\'ees et \'ecrit dans le fichier \texttt{load.hurl} dont est issue la requ\^ete. Ceci \'etant dit, 
+on a recours \`a Python pour g\'en\'erer al\'eatoirement la coordonn\'ee via le module \texttt{random} dans le script \texttt{generateCoordinates.py}.
+\begin{lstlisting}[frame=single, language=python, title={generateCoordinates.py}, breaklines]
+import random
+import sys
+def generate_x():
+num = random.uniform(441423.15, 500455.83)
+print(num)
+def generate_y():
+num = random.uniform(6638807.60, 6763025.44)
+print(num)
+if __name__ == "__main__" :
+if len(sys.argv) > 1:
+if sys.argv[1] == "1":
+    generate_x()
+elif sys.argv[1] == "2":
+    generate_y()
+else:
+print("Pas d'argument.")
+\end{lstlisting}
+
+On passe en argument de notre script Python soit 1 ou 2 selon que l'on veuille g\'en\'erer x ou y. Puis viens l'heure du test, on va donc relancer notre script avec les diff\'erentes 
+modifications et avoir la courbe pr\'esent\'ee \`a la figure~\ref{fig:courbe_aleatoire_10s}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/courbe_aleatoire_10s.png}
+\caption{Courbe avec des requ\^etes al\'eatoires sur 10 secondes}
+\label{fig:courbe_aleatoire_10s}
+\end{figure}
+
+On voit que peu importe le d\'elai, chacune de nos requ\^etes est ex\'ecut\'ee en moins d'une seconde, qu'\`a 0.1 seconde\footnote{C'est-\`a-dire 10 requ\^etes pas seconde.} 
+on se retrouve \`a 152 ms en moyenne pour 100 requ\^etes effectu\'ees durant cette p\'eriode. Cependant, l'on se souvient que l'intervalle choisit est petit et 
+qu'il ne couvre pas toute la France, c'est pourquoi il sera question prochainement de l'agrandir.
+
+% \section{Journ\'ee du 30/07/2024}
+\subsection{Am\'elioration du g\'en\'erateur en augmentant la surface couverte}
+Nous avons continu\'e \`a \'evaluer notre image Docker \texttt{bd-api} en modifiant notre script \texttt{glob.sh}. En effet, on a pris qu'une petite portion de la France 
+afin de tester comment notre conteneur r\'eagissait avec diff\'erentes requ\^etes suivant des d\'elais vari\'es. Ainsi, on a commenc\'e par \'etendre notre intervalle comme le pr\'esente la figure~\ref{fig:perimetre_etendu_France}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/perimetre_etendu_France.png}
+\caption{Intervalle \'etendu \`a plus grande portion de la France}
+\label{fig:perimetre_etendu_France}
+\end{figure}
+
+On peut y voir notre \texttt{topLeft} global et notre \texttt{bottomRight} global qui vont repr\'esenter l'intervalle dans lequel nos points de coordonn\'ees seront g\'en\'er\'es. Cependant, lors de la g\'en\'eration, 
+il peut arriver que \texttt{bottomRight} soit en haut \`a gauche et \texttt{topLeft} soit en bas \`a droite, ce qui n'est pas un comportement voulu. Pour y rem\'edier, on va apporter de l\'eg\`eres modifications 
+\`a notre script Python \texttt{generateCoordinates.py}.
+\begin{lstlisting}[language=python, frame=single, title={generateCoordinates.py}, breaklines]
+def generate_x():
+num = random.uniform(454711.26, 1017778.19)
+num2 = random.uniform(num, 1017778.19)
+print(num, " ", num2)
+
+def generate_y():
+num = random.uniform(6326985.52, 6904672.61)
+num2 = random.uniform(6326985.52, num)
+print(num, " ", num2)  
+\end{lstlisting}
+
+En effet, on s'est rendu compte que plus on se d\'epla\c{c}ait vers la droite que la valeur de x augmentait tandis que la valeur de y diminuait lorsqu'on se d\'epla\c{c}ait vers le bas. C'est la raison pour laquelle, 
+on modifie les limites de notre intervalle pour faire en sorte qu'ayant pris un x ou un y donn\'e, que la valeur de l'autre coordonn\'ee soit acceptable.
+
+Apr\`es avoir effectu\'e ces modifications, nous avons relanc\'e notre script en sp\'ecifiant comme dur\'ee 30 secondes. On a obtenu les r\'esultats pr\'esent\'es \`a la figure~\ref{fig:req_30s_aleat_perimetre_etendu}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/req_30s_aleat_perimetre_etendu.png}
+\caption{R\'esultats sur 30 secondes avec requ\^etes g\'en\'er\'ees al\'eatoirement}
+\label{fig:req_30s_aleat_perimetre_etendu}
+\end{figure}
+
+On peut y voir que notre conteneur prend en moyenne plus d'une seconde pour r\'epondre \`a une requ\^ete selon le d\'elai, sauf pour chaque 0.8 seconde\footnote{Environ 1 requ\^ete par seconde.} o\`u se retrouve \`a 950 ms.
+% \section{Journ\'ee du 31/07/2024}
+En analysant les r\'esultats obtenus, on s'est interrog\'e sur leur objectivit\'e. En effet, les requ\^etes sont g\'en\'er\'ees de fa\c{c}on al\'eatoire; bien qu'on arrive \`a avoir de bons \texttt{topLeft} et \texttt{bottomRight}, 
+on peut se retrouver \`a cr\'eer un rectangle trop grand. Parce que l'objectif premier est de retrouver un bien associ\'e \`a une annonce immobili\`ere, qui pourrait \^etre d'une surface bien moindre.
+
+% \section{Journ\'ee du 02/08/2024}
+\subsection{Utilisation de requ\^etes r\'eelles}
+Toujours dans l'id\'ee d'estimer au mieux la charge du syst\`eme via un comportement r\'eel, on a laiss\'e tomber l'approche utilisant les requ\^etes g\'en\'er\'ees al\'eatoirement pour \`a la place choisir 30 requ\^etes r\'eelles 
+que nous allons faire tourner al\'eatoirement. Pour ce faire, on a d\^u avoir recours \`a l'interface graphique accessible \`a \texttt{http://10.144.208.198:4200/} comme l'illustre la figure~\ref{fig:interface}. 
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/interface.png}
+\caption{Interface de l'application}
+\label{fig:interface}
+\end{figure}
+
+On peut voir sur la figure~\ref{fig:interface}, la console o\`u on peut copier la requ\^ete effectu\'ee lorque l'on se d\'eplace sur la carte. En effet, la requ\^ete est effectu\'ee suivant les dimensions de la carte qui est mat\'erialis\'ee; 
+donc, pour g\'en\'erer une requ\^ete, on a qu'\`a se d\'eplacer et copier ce que l'on a en console.
+
+La requ\^ete effectu\'ee par l'interface graphique \`a partir de la carte renvoie 500 lieux de fa\c{c}on al\'eatoire. Cela veut dire que plus la surface est grande et plus on risque de ne plus se retrouver avec les m\^emes points; 
+cela entraine donc un temps de r\'eponse variant car il n'y a pas vraiment de mise en cache. Dans cette optique, on a d\'ecid\'e de choisir des requ\^etes qui renvoient au plus 500 lieux en zoomant la carte au maximum et 
+de modifier notre script pour l'ex\'ecuter chaque 100 millisecondes mais modifier \`a chaque fois l'intervalle de la surface souhait\'ee. Pour ce faire, on va modifier la requ\^ete faite \`a l'API pour utiliser l'endpoint 
+\lstinline{/dpe_with_par} qui sera \'ecrite dynamiquement dans le fichier \texttt{load.hurl}.
+
+\begin{lstlisting}[language=bash, frame=single, title={load.hurl}, breaklines]
+GET http://10.144.208.247:3000/geolocdpe/api/v0/dpe/dpe_with_par
+[QueryStringParams]
+topLeft: 6692949.509452589,854553.4328283346
+bottomRight: 6692812.060103242,854722.7890251336
+surface: 30100,30200
+
+HTTP 200
+[Asserts]
+jsonpath "$.*.id" exists
+jsonpath "$.*" count <= 500
+\end{lstlisting}
+
+On va modifier notre script que l'on va se retrouver \`a le lancer en entrant la commande : 
+\begin{lstlisting}[frame=single]
+$ sudo ./glob.sh 30 values.txt 100
+\end{lstlisting}
+
+O\`u comme premier param\`etre, on a la dur\'ee souhait\'ee en secondes, puis en second param\`etre le fichier o\`u stocker le temps moyen de r\'eponse de chaque requ\^ete et enfin l'intervalle choisi. 
+Parce que l'on va d'abord commencer avec un minimum de 100 puis augmenter de la valeur de l'intervalle \`a chaque 100 millisecondes. Donc, pour les premi\`eres requ\^etes, on aura une surface 
+comprise entre 100 et 200 puis 200 et 300; et ainsi de suite.
+
+De plus, on a dans un premier temps pris dans 15 villes fran\c{c}aises 2 zones de coordonn\'ees :
+\begin{itemize}
+\item [\textbullet] Paris 
+\item [\textbullet] Marseille 
+\item [\textbullet] Lyon 
+\item [\textbullet] Toulouse 
+\item [\textbullet] Nice 
+\item [\textbullet] Bordeaux 
+\item [\textbullet] Lille 
+\item [\textbullet] Nantes 
+\item [\textbullet] Strasbourg 
+\item [\textbullet] Montpellier 
+\item [\textbullet] Rennes 
+\item [\textbullet] Grenoble 
+\item [\textbullet] Angers 
+\item [\textbullet] Tours 
+\item [\textbullet] Dijon
+\end{itemize}
+
+Nous avons ainsi enregistr\'e les diff\'erentes coordonn\'ees dans un fichier texte que nous avons nomm\'e \texttt{req.txt}. Apr\`es ex\'ecution de ce script, 
+on se retrouve la courbe que pr\'esente la figure~\ref{fig:req_15_villes_France_10s}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/req_15_villes_France_10s.png}
+\caption{Courbe des 30 requ\^etes sur 10 secondes}
+\label{fig:req_15_villes_France_10s}
+\end{figure}
+
+% \section{Journ\'ee du 05/08/2024}
+% ~\newline\newline
+Nous avons continu\'e d'\'evaluer notre syst\`eme en modifiant l'intervalle de la surface de 100 \`a 5 $m^2$. Cependant, 
+face \`a la rapidit\'e de la r\'eponse, nous nous sommes demand\'es combien de lieux \'etaient effectivement renvoy\'es sachant qu'il 
+y avait une condition sur le nombre de lieux. Pour ce faire, nous avons d\'ecider de modifier notre fichier \texttt{load.hurl} 
+afin de capturer\footnote{Stocker dans une variable, langage propre \`a Hurl.} le nombre de lieux retourn\'es via \cite{capture-Hurl}.
+\begin{lstlisting}[frame=single, title={load.hurl}, breaklines]
+GET http://10.144.208.247:3000/geolocdpe/api/v0/dpe/dpe_with_par
+[QueryStringParams]
+topLeft: 6692949.509452589,854553.4328283346
+bottomRight: 6692812.060103242,854722.7890251336
+surface: 150,151
+
+HTTP 200
+[Captures]
+locations: jsonpath "$.*" count
+[Asserts]
+jsonpath "$.*.id" exists
+jsonpath "$.*" count <= 500
+\end{lstlisting}
+
+Ainsi, pour voir le nombre de lieux retourn\'es, on entre la commande suivante dans le terminal :
+\begin{lstlisting}[frame=single, language=bash, breaklines]
+$ sudo docker run --rm -v ./load.hurl:/tmp/load.hurl -w /tmp ghcr.io/orange-opensource/hurl:latest --test --color --json /tmp/load.hurl | jq . entries[0].captures[0].value
+\end{lstlisting}
+
+La r\'eponse nous est pr\'esent\'ee sur la figure~\ref{fig:nb_locations_returned}. On voit que le nombre de lieux est \'egal \`a 0.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/nb_locations_returned.png}
+\caption{R\'eponse concernant le nombre de lieux retourn\'es}
+\label{fig:nb_locations_returned}
+\end{figure}
+
+% \section{Journ\'ee du 06/08/2024}
+\subsection{Mise en \'evidence du cache de PostgreSQL}
+Nous avons un peu mieux cern\'e ce que l'on voulait tester. Au contact de l'interface graphique, nous nous sommes rendus compte que chaque mouvement de 
+la carte entra\^inait une nouvelle requ\^ete que l'on pouvait voir dans la console. Ainsi, on comprend mieux pourquoi \'evaluer le nombre de requ\^etes qu'un 
+conteneur peut g\'erer en moins d'une seconde. Cela est tr\`es int\'eressant dans la mesure o\`u rien qu'en utilisant l'interface graphique que l'utilisateur 
+effectuait une succession de requ\^etes qui va se mat\'erialiser par des points repr\'esent\'es sur la carte. Si une requ\^ete prend trop de temps, 
+cela peut entraver l'exp\'erience utilisateur.
+
+Suivant cette logique, nous nous sommes int\'eress\'es \`a comment PostgreSQL mettait en place la mise en cache. Cela nous a permit de nous rendre compte que PostgreSQL 
+n'avait pas de cache int\'egr\'e mais utilisait plut\^ot la m\'emoire partag\'ee du syst\`eme. D\`es lors, il f\^ut question de tester son impact, afin de v\'erifier si cette 
+mise en cache influait sur le temps de r\'eponse des requ\^etes.
+
+Pour v\'erifier cela, nous avons d'abord commenc\'e par voir comment on pouvait vider le cache de notre conteneur. On a vu que l'on pouvait entrer la succession de commande :
+\begin{lstlisting}[frame=single, language=bash, breaklines]
+$ docker exec -it bd-api bash
+id-container> service stop postgresql
+id-container> sync
+id-container> echo 3 > /proc/sys/vm/drop_caches
+id-container> service start postgresql
+\end{lstlisting}
+
+Cela s'est sold\'e par une erreur car on a d\'ecouvert que le cache utilis\'e par un conteneur est celui du syst\`eme, donc qu'il fallait ex\'ecuter la commande suivance au niveau du syst\`eme :
+\begin{lstlisting}[frame=single, language=bash, breaklines]
+$ sudo sh -c "/usr/bin/echo 3 > /proc/sys/vm/drop_caches"    
+\end{lstlisting}
+
+% \section{Journ\'ee du 07/08/2024}
+% ~\newline\newline
+On a continu\'e \`a \'evaluer \`a quel point la mise en cache optimisait le temps de r\'eponse. Pour ce faire, nous avons d'abord commenc\'e par vider le cache, 
+puis nous avons ex\'ecut\'e le programme une premi\`ere fois puis une seconde fois pour voir la diff\'erence. Et enfin, on a ex\'ecut\'e le programme une troisi\`eme fois en vidant le cache \`a chaque requ\^ete. 
+Cela nous a donn\'e les valeurs en millisecondes pr\'esent\'ees sur la figure~\ref{fig:val1_val2_val3}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/val1_val2_val3.png}
+\caption{V\'erification de la mise en cache sur 30 requ\^etes distinctes}
+\label{fig:val1_val2_val3}
+\end{figure}
+
+On voit que cela ne nous permet pas v\'eritablement de conclure, c'est pourquoi, nous avons plut\^ot d\'ecid\'e d'ex\'ecuter une requ\^ete avec un temps de r\'eponse significatif. 
+On a choisi la requ\^ete \lstinline[breaklines]{http://10.144.208.247:3000/geolocdpe/api/v0/dpe/get?topLeft=6692755.632012922,348070.5115176897&bottomRight=6686698.84754637,363102.02091083454} 
+qui r\'epond en moyenne en 700 millisecondes. Nous avons donc pris cette requ\^ete que nous avons ex\'ecut\'e 30 fois tout en vidant le cache, le r\'esultat est illustr\'e sur la figure~\ref{fig:same_req_without_cache}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/same_req_without_cache.png}
+\caption{Requ\^ete significative effectu\'ee 30 fois sans cache}
+\label{fig:same_req_without_cache}
+\end{figure}
+
+Par la suite, nous avons d\'ecid\'e de voir quel r\'esultat on aurait avec la mise en cache; nous avons donc comment\'e la commande pour mettre en cache et r\'eex\'ecuter 
+le programme pour avoir ce qui est pr\'esent\'e sur la figure~\ref{fig:same_req_30x_with_cache}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/same_req_30x_with_cache.png}
+\caption{Requ\^ete significative effectu\'ee 30 fois avec cache}
+\label{fig:same_req_30x_with_cache}
+\end{figure}
+
+On voit clairement l'effet de la mise en cache sur notre syst\`eme. Ayant mis en exergue l'impact de la mise en cache, 
+nous avons d\'ecid\'e d'ex\'ecuter notre programme 10 secondes en prenant 30 points dans 15 villes fran\c{c}aises, le r\'esultat est illustr\'e par la figure~\ref{fig:req_15_villes_fran\c{c}aises_10s_sans_cache}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/req_15_villes_francaises_10s_sans_cache.png}
+\caption{Requ\^etes sur 15 villes fran\c{c}aises durant 10 secondes sans cache}
+\label{fig:req_15_villes_fran\c{c}aises_10s_sans_cache}
+\end{figure}
+
+% \section{Journ\'ee du 08/08/2024}
+% ~\newline\newline
+Nous avons continu\'e \`a mettre en exergue la mise en cache. Pour ce faire, nous avons d\'ecid\'e de vider le cache apr\`es 5 requ\^etes. On a d\^u modifier la boucle principale de notre script \texttt{glob.sh}.
+\begin{lstlisting}[frame=single, language=bash, breaklines]
+req=0
+for(( i=0; i<30; i++ )); do
+((req = $req + 1))
+echo "C'est $req"
+run 1 $1 $2 $i
+if [ $req -eq 5 ];then
+sh -c "/usr/bin/echo 3 > /proc/sys/vm/drop_caches"
+echo "Cache vide."
+req=0
+fi
+done
+\end{lstlisting}
+
+Par la suite, nous avons d'abord lanc\'e notre script sur les requ\^etes sur 15 villes fran\c{c}aises, ce qui est repr\'esent\'e sur la figure~\ref{fig:cache_vide_chaque_5s}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/cache_vide_chaque_5s.png}
+\caption{Requ\^etes sur 15 villes fran\c{c}aises avec cache vid\'e apr\`es 5 requ\^etes}
+\label{fig:cache_vide_chaque_5s}
+\end{figure}
+
+Puis, nous avons lanc\'e un script effectuant une requ\^ete significative apr\`es 5 secondes, on se retrouve avec le r\'esultat sur la figure~\ref{fig:cache_vide_req_significative_chaque_5s}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/cache_vide_req_significative_chaque_5s.png}
+\caption{Cache vid\'e apr\`es 5 requ\^etes sur une requ\^ete significative}
+\label{fig:cache_vide_req_significative_chaque_5s}
+\end{figure}
+
+On peut clairement voir l'impact de la mise en cache car avec les requ\^etes 1, 6, 11, 16, 21 et 26 qui se passent apr\`es avoir vid\'e le cache.
+
+% \section{Journ\'ee du 09/08/2024}
+% ~\newline\newline
+\subsection{Ajout de la table parcelles \`a l'image Docker finale}
+Nous nous sommes consacr\'es \`a la cr\'eation d'une image comportant l'API et uniquement la table \texttt{parcelles}. 
+Pour pouvoir mettre cela en place, il aura d'abord \'et\'e n\'ecessaire de r\'ealiser un nouveau dump pour cette table sp\'ecifiquement.
+
+Par la suite, on a recours \`a l'image \texttt{postgis/postgis} pour cr\'eer un conteneur o\`u on aura copi\'e notre dump SQL. Puis on a cr\'e\'e les utilisateurs \texttt{cestou} et \texttt{express} 
+avec \lstinline[language=sql, breaklines]{CREATE USER}. Et enfin, on aura charg\'e cette table en effectuant la commande : 
+\begin{lstlisting}[frame=single, language=bash, breaklines]
+$ docker exec -it first-parcelles psql -U j2m -f /var/lib/postgresql/parcelles_new_dump.sql
+\end{lstlisting}
+
+Une fois que cette table aura \'et\'e charg\'ee, on va stocker les donn\'ees dans un volume avant de faire un commit afin de cr\'eer une image personnalis\'ee :
+\begin{lstlisting}[frame=single, language=bash, breaklines]
+$ docker exec -it first-parcelles -r /var/lib/postgresql/parcelles_new_dump.sql parcelles data
+$ docker commit first-parcelles bd-parcelles:complete
+\end{lstlisting}
+
+D\`es lors, on va modifier le code de l'API pour mettre le port \`a 3001 dans \texttt{nginx.conf} et \texttt{index.ts} puis on a comment\'e \texttt{dpe.route.ts} pour avoir :
+\begin{lstlisting}[frame=single, breaklines]
+// router.get('/get', method.getPointsInZone)
+router.get('/parcelles',method.getParcelles)
+// router.get('/dpe_with_par', method.getDpeWithParcelles)
+\end{lstlisting}
+
+Ensuite, on a modifi\'e le Dockerfile qu'on avait initialement cr\'e\'e pour mettre l'image \lstinline{bd-parcelles:complete} et on a compil\'e l'image. 
+Puis, on a cr\'e\'e le conteneur avec :
+\begin{lstlisting}[frame=single, language=bash, breaklines]
+$ docker run -d --name container-api-parcelles -e PGDATA=parcelles-data -p 3001:3001 api-parcelles
+\end{lstlisting}
+
+Et pour tester le fonctionnement effectif de notre conteneur, on va faire une requ\^ete sur le endpoint \texttt{/parcelles} en entrant 
+l'URL \url{http://10.144.208.247:3001/geolocdpe/api/v0/dpe/parcelles?topLeft=6692755.632012922,348070.5115176897&bottomRight=6686698.84754637,363102.02091083454&surface=10,100}. 
+Et on aura le r\'esultat pr\'esent\'e par la figure~\ref{fig:test_req_parcelles}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth]{fig05/test_req_parcelles.png}
+\caption{Test du endpoint parcelles}
+\label{fig:test_req_parcelles}
+\end{figure}
+
+\section{R\'esultats}
+    \subsection{Images Docker}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{fig05/Capture d'ecran 2024-07-16 051223.png}
+        \caption{R\'ecapitulatif des diff\'erentes images Docker}
+        \label{fig:recap-images}
+    \end{figure}
+On peut y voir :
+    \begin{itemize}
+        \item [\textbullet] \textbf{bd-api} : correspondant \`a notre image Docker personnalis\'ee permettant le lancement des services du serveur PostgreSQL et de l'API. C'est l'image finale obtenue en fin de semaine.
+        \item [\textbullet] \textbf{postgres-dpe} : correspondant au commit de la base de donn\'ees charg\'ee avec le dump SQL.
+        \item [\textbullet] \textbf{api-image} : correspondant \`a l'image Docker de l'API Express. 
+        \item [\textbullet] \textbf{first} : image Docker du serveur PostgreSQL ayant le dump SQL import\'e. 
+        \item [\textbullet] \textbf{registry} : image Docker permettant la cr\'eation d'un registre local \`a l'instar de Docker hub, dans le but d'avoir un emplacement de stockage local pour nos images afin de pouvoir y acc\'eder \`a distance.\\
+    \end{itemize}
+    \subsection{Comparaison des images}
+    Nous nous sommes lanc\'es dans l'\'etude comparative de nos images Docker : la premi\`ere, r\'esultant d'un \lstinline{docker commit} utilisant un volume que nous avons nomm\'e \lstinline{postgres-dpe}; et la seconde, qui int\`egre directement le dump SQL, nomm\'ee \lstinline{second}. Pour la lisibilit\'e, on a choisi de pr\'esenter nos r\'esultats sous forme de tableau que pr\'esente le tableau~\ref{tab:tab1}.
+
+
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{c|c|c}
+    \textbf{Caract\'eristiques} & \textbf{postgres-dpe} & \textbf{second} \\
+    \hline
+    Taille image & 15,4 Go & 6, 59 Go \\
+    Temps d'initialisation & 2min33s & 28s \\
+    Temps de lancement & 0s & 0s \\
+    Temps d'arr\^et & 0s & 0s \\
+    Temps de destruction & 0s  & 0s \\
+    Persistence des donn\'ees & Oui & Non \\
+    Utilisation concurrente & Oui & Oui \\
+        \end{tabular}
+        \caption{Tableau comparatif des images postgres-dpe et second}
+        \label{tab:tab1}
+    \end{table}
+    
+    Maintenant, il nous revient de sp\'ecifier quelques concepts :
+    \begin{itemize}
+        \item [\textbullet] \textbf{Temps d'initialisation :} temps n\'ecessaire lors du premier lancement du conteneur apr\`es \lstinline{docker run} pour charger les donn\'ees et rendre la base de donn\'ees accessible.
+        \item [\textbullet] \textbf{Temps de lancement :} temps n\'ecessaire pour lancer le conteneur apr\`es l'avoir pr\'ealablement cr\'e\'e avec \lstinline{docker start}.
+        \item [\textbullet] \textbf{Temps d'arr\^et :} temps que met le conteneur \`a s'arr\^eter apr\`es \lstinline{docker stop}.
+        \item [\textbullet] \textbf{Temps de destruction :} temps que met le conteneur \`a \^etre d\'etruit arp\`es la commande \lstinline{docker rm}.
+        \item [\textbullet] \textbf{Utilisation concurrente :} qui renvoie \`a la capacit\'e de cr\'eer plusieurs conteneurs utilisant la m\^eme image en  m\^eme temps.\\
+    \end{itemize}
+    
+    Nous tenons aussi \`a ajouter que le temps de 0 seconde fait r\'ef\'erence au fait que l'op\'eration a pris moins d'une seconde. \\
+    \subsection{D\'eploiement Kubernetes}
+A l'issue des diff\'erents tests r\'ealis\'es, on a pu constater que le syst\`eme g\'erait plut\^ot bien sans mise en cache. Ce qui nous a permis de le d\'eployer sereinement via Kubernetes via 
+l'usage de registre priv\'e s\'ecuris\'e sur le serveur qui a \'et\'e mis \`a notre disposition. En effet, on l'a d\'eploy\'e avec un nombre de 3 replicas sur un service de type \texttt{LoabBalancer} afin 
+que la charge soit \'equitablement r\'epartie.
+    \subsection{Production d'un tutoriel}
+Dans le but d'encapsuler les \'etapes de conteneurisation avec Docker et du d\'eploiement avec Kubernetes, on a cr\'e\'e un tutoriel au format texte qui r\'esume la proc\'edure en passant par la cr\'eation du registre jusqu'au d\'eploiement.
