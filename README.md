@@ -1,91 +1,87 @@
-# Latex Thesis Template for ENSP
-This repository contains a thesis latex project template based on the [University of Bristol](https://www.sharelatex.com/templates/thesis/university-of-bristol-thesis-template) thesis latex template. The project is best suited for ENSP students but anyone can customize it to suit his/her needs.
+# 📄 Rapport de stage pré-ingénieur
 
-### Prerequisites
-In order to follow the tutorial smoothly, start by installing latex on your machine and any latex editor that suits you; I use [TeXstudio](https://www.texstudio.org) latex editor. Installing and configuring these is beyond the scope of this tutorial. You can also download the zip and then upload the project to [ShareLateX](https://www.sharelatex.com) (Recommended Approach). To use this template with minimal hiccups, you should have a fairly good level of latex knowledge.
+**Modélisation d'un module d'extraction automatique de données pour documents administratifs : étude de cas Dolibarr**
 
+![LaTeX](https://img.shields.io/badge/LaTeX-008080?style=flat-square&logo=latex&logoColor=white)
+![Statut](https://img.shields.io/badge/statut-en_finalisation-0080ff?style=flat-square)
+![Année](https://img.shields.io/badge/année_académique-2025--2026-0f172a?style=flat-square)
 
-## Downloading the project to your machine 
-To get this starter template on your local machine, you can either download the zip file or clone the project using git
+| | |
+|---|---|
+| **Auteur** | Henri Joël Fofack Alemdjou |
+| **Formation** | Génie Informatique, École Nationale Supérieure Polytechnique de Yaoundé (Université de Yaoundé I) |
+| **Structure d'accueil** | Novalitix |
+| **Encadrement** | M. Brell Sanwouo, doctorant et CEO de Novalitix |
+| **Code associé** | [Ophélia (DollPhelia)](https://github.com/ALEMDJOU/DollPhelia) |
 
-```
-git clone https://github.com/Yuhala/latex-thesis.git
+---
 
-```
-## Uploading the project to ShareLaTeX 
-If you prefer using [ShareLateX](https://www.sharelatex.com) (Recommended) for your latex projects, simply create a new latex project on [ShareLateX](https://www.sharelatex.com) and upload the downloaded zip file to your workspace. ie In ShareLaTeX: **New Project -> Upload Project -> Select a .zip file**
+## 🎯 Sujet
 
-#### Quick intro
-As a quick intro, the project contains 3 main folder: `chapters`, `frontmatter`, and `logos`. The names are pretty self explanatory. Each chapter folder has a figure folder, where all images for the chapter should be put. The `ornaments.pdf` file contains the full documentation for the `latex ornament package` which is used for all the beautiful designs. 
+Les entreprises manipulent des documents très variés : factures, RIB, extraits Kbis, contrats, CV. En extraire les données reste difficile :
 
-#### Quick test
-In order to do a quick test of the project, open the folder in your latex editor and compile the project. You would probably see some errors but as long as your `memoirthesis.pdf` has reasonable enough content, I think you are good to go.
+- les approches **à base de règles** sont rigides et cassent dès qu'un format change ;
+- les **modèles d'IA génériques** perdent en précision sur les valeurs numériques et le contexte positionnel.
 
-#### Doing Modifications
-Here we would get a little bit into the internals of the project and learn how we can build our project using this as a base. Keep in mind that the main latex project file is the  `memoirthesis.tex` file. This file indexes all the rest and should be the first file opened in your latex editor.
+Ce rapport propose une **méthodologie hybride** qui combine :
 
-## Frontmatter
-The frontmatter consists of the front page, title, gloassaries, abstracts and dedications.
+1. l'**extraction par templates** (ancrage spatial, rapide et explicable) ;
+2. la **reconnaissance d'entités nommées (NER)** ;
+3. des **techniques de reconnaissance de motifs** (dates, montants, IBAN…) ;
 
-## Frontpage border design
-To modify the frontpage border design, open the `frontmatter/title.tex` file and modify the tikzpicture values. 
-```
-\begin{tikzpicture}[remember picture, overlay, start chain, node distance=-2mm,color=darkgray]
-\node (nworn) [shift={(5mm,-5mm)}, anchor=north west, on chain ] at (current page.north west) {\pgfornament[width=10mm]{24}};
-\foreach \i in {1,...,17}
-\node [on chain] {\pgfornament[width=10mm]{19}};
-\node (neorn) [on chain] {\pgfornament[width=10mm]{24}};
-\foreach \i in {1,...,25}
-\node [continue chain=going below, on chain] {\pgfornament[width=10mm]{24}};
-\node (seorn) [on chain] {\pgfornament[width=10mm]{24}};
-\foreach \i in {1,...,17}
-\node [continue chain=going left, on chain] {\pgfornament[width=10mm]{24}};
-\node (sworn) [on chain] {\pgfornament[width=10mm]{24}};
-\foreach \i in {1,...,25}
-\node [continue chain=going above, on chain] {\pgfornament[width=10mm]{24}};
-\end{tikzpicture}
-```
-The corresponding design for the above code is as follows...
-![frontpage](frontpage.png)
+le tout avec un **mécanisme d'apprentissage continu** qui s'adapte aux nouveaux formats sans réentraînement lourd. Le prototype est intégré comme module à l'ERP **Dolibarr**.
 
-The left and right border designs correspond to design `24` and the top border corresponds to design `19`. `Page 17` of the ornaments package documentation presents a list of designs and their corresponding values. See the [ornaments package documentation](ornaments.pdf) for more information.
+## 📊 Résultats annoncés dans le rapport
 
-## Default Colour
-The default colour used here is green. To change the default colour open the `memoirthesis.tex`  file and modify the colour values in the below command. 
+| Approche | Précision d'extraction |
+|---|---:|
+| Expressions régulières seules | 72 % |
+| LLM générique (non fine-tuné) | 81 % |
+| **Méthode hybride proposée** | **> 95 %** |
+
+Évaluation sur un périmètre de 10 000 documents tests. Le prototype réduit la saisie manuelle de **80 %**.
+
+## 📚 Plan du rapport
+
+1. **Introduction générale** : contexte, problématique, objectifs
+2. **Concepts généraux et état de l'art** : OCR, traitement intelligent de documents (IDP), LayoutLMv3, solutions du marché (AWS Textract, Azure Document Intelligence), comparaison des coûts
+3. **Méthodologie** : analyse et conception UML (cas d'utilisation, classes, packages, séquences, workflow général)
+4. **Références bibliographiques** et annexes
+
+## 🗂️ Structure du dépôt
 
 ```
-\definecolor{darkgray}{RGB}{0,80,0}
+├── memoirthesis.tex          # Fichier principal (à compiler)
+├── frontmatter/              # Page de titre, dédicace, déclaration, résumé, abstract, glossaire
+├── chapters/
+│   ├── chapter01/            # Introduction générale
+│   ├── chapter03/            # Concepts généraux et état de l'art
+│   ├── chapter04/            # Méthodologie + diagrammes UML (PDF)
+│   ├── fig/                  # Figures de l'état de l'art
+│   └── appendices/           # Annexes
+├── biblio.bib                # Bibliographie
+└── logos/                    # Logos institutionnels
 ```
-For example the colour code `{RGB}{0,0,120}` gives the following view.
-![frontpage](colour1.png)
 
-## Glossaries
-Glossary items are added in the `memoirthesis.tex` file using the below syntax
+## 🛠️ Compilation
+
+Prérequis : une distribution LaTeX complète (TeX Live ou MiKTeX) avec les paquets `memoir`, `pgfornament`, `glossaries` et `import`.
+
+```bash
+git clone https://github.com/ALEMDJOU/RapportDeStageFofack.git
+cd RapportDeStageFofack
+pdflatex memoirthesis.tex
+bibtex memoirthesis
+pdflatex memoirthesis.tex
+pdflatex memoirthesis.tex
 ```
-\newglossaryentry{bench}
-{
-	name = Benchmark,
-    description = {In computer science, a benchmark is a test to measure the performance of a system to compare it to others},
-    plural = benchmark
-}
-```
-Read the [glossaries documentation](https://www.sharelatex.com/learn/Glossaries) on ShareLatex for more information
 
-## Abstract, titles, dedications
-Modifying these is as simple as ABC...change the default lipsum text and enter what you want. Compile each time and view the pdf till you are satisfied with the outcome
+Ou en une commande : `latexmk -pdf memoirthesis.tex`. Le projet peut aussi être importé tel quel sur [Overleaf](https://www.overleaf.com).
 
-## Chapters
-Each chapter starts with a small mini table of contents. Modify the corresponding tex file. All figures should be put in the
-`figxx` directory for the sake of neatness
+## 🙏 Crédits
 
-#### Troubleshooting
-For any strange errors, [TeX-LaTeXStackExchange](https://tex.stackexchange.com/) forum is your best bet...
+Mise en page basée sur le modèle de thèse LaTeX pour l'ENSP de [Peterson Yuhala](https://github.com/Yuhala/latex-thesis), lui-même dérivé du modèle de l'Université de Bristol.
 
-## Author
+---
 
-* **Peterson Yuhala** 
-
-
-## Acknowledgments
-[ShareLateX](https://www.sharelatex.com)
-
+👤 **Henri Joël Fofack Alemdjou** · [Portfolio](https://portfoliofofackhenri.vercel.app/) · [LinkedIn](https://linkedin.com/in/henri-fofack-250b1b320) · [GitHub](https://github.com/ALEMDJOU)
